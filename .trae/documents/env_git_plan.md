@@ -38,7 +38,7 @@
   - `programmatic` TR-1.4.2.2: 执行 `docker-compose config` 无错误
 - **Notes**: 确保Docker服务正在运行
 
-## [/] 任务 1.5.1：初始化Git仓库
+## [x] 任务 1.5.1：初始化Git仓库
 - **Priority**: P1
 - **Depends On**: 任务 1.2.2, 任务 1.2.3
 - **Description**:
