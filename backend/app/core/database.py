@@ -43,5 +43,10 @@ async def init_db():
     await Tortoise.generate_schemas()
     print("数据库初始化成功")
 
+async def close_db():
+    """关闭数据库连接"""
+    await Tortoise.close_connections()
+    print("数据库连接已关闭")
+
 if __name__ == "__main__":
     run_async(init_db())

@@ -1,10 +1,4 @@
 from tortoise import fields, models
-from enum import Enum
-
-class UserRole(str, Enum):
-    STUDENT = "student"
-    STUDENT_ADMIN = "student_admin"
-    TEACHER = "teacher"
 
 class User(models.Model):
     """用户模型"""
@@ -17,7 +11,7 @@ class User(models.Model):
     research_direction = fields.CharField(max_length=255, null=True)
     wechat = fields.CharField(max_length=50, null=True)
     password_hash = fields.CharField(max_length=255, null=False)
-    role = fields.CharField(max_length=20, default=UserRole.STUDENT)
+    role = fields.CharField(max_length=20, default="student")
     is_admin = fields.BooleanField(default=False)
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
