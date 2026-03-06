@@ -9,14 +9,16 @@ class Paper(models.Model):
     keywords = fields.CharField(max_length=255, null=True)
     doi = fields.CharField(max_length=100, null=True)
     paper_type = fields.CharField(max_length=50, default="journal")  # journal, thesis
+    category = fields.CharField(max_length=100, null=True)
     file_path = fields.CharField(max_length=255, null=False)
     upload_time = fields.DatetimeField(auto_now_add=True)
     like_count = fields.IntField(default=0)
     favorite_count = fields.IntField(default=0)
     view_count = fields.IntField(default=0)
+    download_count = fields.IntField(default=0)
     
     # 关系
-    user = fields.ForeignKeyField("models.User", related_name="papers", on_delete=fields.CASCADE)
+    uploader = fields.ForeignKeyField("models.User", related_name="papers", on_delete=fields.CASCADE, db_column="uploader_id")
     
     class Meta:
         table = "papers"
