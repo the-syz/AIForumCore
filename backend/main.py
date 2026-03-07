@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from app.core.database import init_db, close_db
 
 # API 路由
-from app.api import auth, users, papers, posts, downloads
+from app.api import auth, users, papers, posts, downloads, forum
 
 
 @asynccontextmanager
@@ -49,8 +49,8 @@ app.include_router(users.router, prefix="/api/users", tags=["用户"])
 app.include_router(papers.router, prefix="/api/papers", tags=["论文"])
 app.include_router(posts.router, prefix="/api/posts", tags=["经验贴"])
 # app.include_router(comments.router, prefix="/api/comments", tags=["评论"])
-# app.include_router(forum.router, prefix="/api/forum", tags=["论坛"])
 app.include_router(downloads.router, prefix="/api/downloads", tags=["下载中心"])
+app.include_router(forum.router, prefix="/api/forum", tags=["论坛"])
 # app.include_router(search.router, prefix="/api/search", tags=["搜索"])
 # app.include_router(ai.router, prefix="/api/ai", tags=["AI"])
 

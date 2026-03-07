@@ -97,8 +97,8 @@ async def list_posts(
         
         # 置顶帖排在前面
         posts = await query.order_by(
-            Post.is_pinned.desc(),
-            Post.created_at.desc()
+            "-is_pinned",
+            "-created_at"
         ).offset(skip).limit(limit)
         
         # 构建响应
@@ -136,7 +136,7 @@ async def list_drafts(
     drafts = await Post.filter(
         author=current_user,
         is_draft=True
-    ).order_by(Post.updated_at.desc())
+    ).order_by("-updated_at")
     
     return drafts
 
@@ -186,7 +186,7 @@ async def update_post(
     current_user: User = Depends(get_current_user)
 ):
     """更新经验贴"""
-    post = await Post.get_or_none(id=post_id)
+    post = await Post.get_or_none(id=post_id).prefetch_related("author")
     if not post:
         raise HTTPException(status_code=404, detail="经验贴不存在")
     
@@ -226,7 +226,7 @@ async def delete_post(
     current_user: User = Depends(get_current_user)
 ):
     """删除经验贴"""
-    post = await Post.get_or_none(id=post_id)
+    post = await Post.get_or_none(id=post_id).prefetch_related("author")
     if not post:
         raise HTTPException(status_code=404, detail="经验贴不存在")
     
