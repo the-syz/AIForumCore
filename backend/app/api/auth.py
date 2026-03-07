@@ -4,6 +4,7 @@ from app.core.security import verify_password, get_password_hash, create_access_
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, Token, UserPasswordUpdate
 from tortoise.exceptions import IntegrityError
+from tortoise import Tortoise
 
 router = APIRouter(tags=["认证"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
@@ -15,16 +16,30 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
         detail="无法验证凭据",
         headers={"WWW-Authenticate": "Bearer"},
     )
-    payload = decode_access_token(token)
-    if payload is None:
+    
+    try:
+        # 尝试重新初始化数据库
+        try:
+            from app.core.database import TORTOISE_ORM
+            await Tortoise.init(config=TORTOISE_ORM)
+        except Exception:
+            pass
+        
+        payload = decode_access_token(token)
+        if payload is None:
+            raise credentials_exception
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise credentials_exception
+        user = await User.get_or_none(id=int(user_id))
+        if user is None:
+            raise credentials_exception
+        return user
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"获取当前用户失败: {str(e)}")
         raise credentials_exception
-    user_id: str = payload.get("sub")
-    if user_id is None:
-        raise credentials_exception
-    user = await User.get_or_none(id=int(user_id))
-    if user is None:
-        raise credentials_exception
-    return user
 
 async def get_current_admin(current_user: User = Depends(get_current_user)) -> User:
     """获取当前管理员用户"""
@@ -35,16 +50,30 @@ async def get_current_admin(current_user: User = Depends(get_current_user)) -> U
         )
     return current_user
 
-@router.post("/register", response_model=UserResponse)
+@router.post("/register")
 async def register(user_data: UserCreate):
     """用户注册"""
-    # 检查学号是否已存在
-    existing_user = await User.filter(student_id=user_data.student_id).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="学号已存在")
-    
-    # 创建用户
     try:
+        print(f"收到注册请求: {user_data}")
+        
+        # 检查学号是否已存在
+        existing_user = await User.filter(student_id=user_data.student_id).first()
+        if existing_user:
+            print(f"学号已存在: {user_data.student_id}")
+            raise HTTPException(status_code=400, detail="学号已存在")
+        
+        # 检查密码长度
+        password = user_data.password
+        password_bytes = password.encode('utf-8')
+        print(f"密码长度（字节）: {len(password_bytes)}")
+        if len(password_bytes) > 72:
+            print("密码长度超过72字节，正在截断...")
+            password = password_bytes[:72].decode('utf-8', errors='ignore')
+            print(f"截断后密码长度（字节）: {len(password.encode('utf-8'))}")
+        
+        # 创建用户
+        print(f"尝试创建用户: {user_data.name}, 学号: {user_data.student_id}")
+        
         user = await User.create(
             name=user_data.name,
             student_id=user_data.student_id,
@@ -53,35 +82,137 @@ async def register(user_data: UserCreate):
             phone=user_data.phone,
             research_direction=user_data.research_direction,
             wechat=user_data.wechat,
-            password_hash=get_password_hash(user_data.password)
+            password_hash=get_password_hash(password)
         )
-        return user
-    except IntegrityError:
-        raise HTTPException(status_code=400, detail="注册失败，请检查输入信息")
+        print(f"用户创建成功: {user.id}")
+        
+        # 构建响应数据
+        response_data = {
+            "id": user.id,
+            "name": user.name,
+            "student_id": user.student_id,
+            "grade": user.grade,
+            "email": user.email,
+            "phone": user.phone,
+            "research_direction": user.research_direction,
+            "wechat": user.wechat,
+            "role": user.role,
+            "is_admin": user.is_admin,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+            "updated_at": user.updated_at.isoformat() if user.updated_at else None
+        }
+        print(f"构建响应数据: {response_data}")
+        
+        return response_data
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"注册失败，错误: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        # 尝试重新初始化数据库
+        try:
+            from app.core.database import TORTOISE_ORM
+            await Tortoise.init(config=TORTOISE_ORM)
+            print("Tortoise ORM 重新初始化成功")
+            
+            # 检查密码长度
+            password = user_data.password
+            password_bytes = password.encode('utf-8')
+            print(f"密码长度（字节）: {len(password_bytes)}")
+            if len(password_bytes) > 72:
+                print("密码长度超过72字节，正在截断...")
+                password = password_bytes[:72].decode('utf-8', errors='ignore')
+                print(f"截断后密码长度（字节）: {len(password.encode('utf-8'))}")
+            
+            # 再次尝试创建用户
+            user = await User.create(
+                name=user_data.name,
+                student_id=user_data.student_id,
+                grade=user_data.grade,
+                email=user_data.email,
+                phone=user_data.phone,
+                research_direction=user_data.research_direction,
+                wechat=user_data.wechat,
+                password_hash=get_password_hash(password)
+            )
+            print(f"用户创建成功: {user.id}")
+            response_data = {
+                "id": user.id,
+                "name": user.name,
+                "student_id": user.student_id,
+                "grade": user.grade,
+                "email": user.email,
+                "phone": user.phone,
+                "research_direction": user.research_direction,
+                "wechat": user.wechat,
+                "role": user.role,
+                "is_admin": user.is_admin,
+                "created_at": user.created_at.isoformat() if user.created_at else None,
+                "updated_at": user.updated_at.isoformat() if user.updated_at else None
+            }
+            return response_data
+        except Exception as e2:
+            print(f"重新初始化后仍然失败: {str(e2)}")
+            raise HTTPException(status_code=500, detail=f"注册失败: {str(e2)}")
 
 @router.post("/login", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     """用户登录"""
-    # 查找用户（支持学号/姓名登录）
-    user = await User.filter(
-        student_id=form_data.username
-    ).first()
-    
-    if not user:
+    try:
+        print(f"收到登录请求: {form_data.username}")
+        
+        # 尝试重新初始化数据库
+        try:
+            from app.core.database import TORTOISE_ORM
+            await Tortoise.init(config=TORTOISE_ORM)
+            print("Tortoise ORM 重新初始化成功")
+        except Exception as e:
+            print(f"Tortoise ORM 初始化失败: {str(e)}")
+        
+        # 查找用户（支持学号/姓名登录）
         user = await User.filter(
-            name=form_data.username
+            student_id=form_data.username
         ).first()
-    
-    if not user or not verify_password(form_data.password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="用户名或密码错误",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    # 生成Token
-    access_token = create_access_token(data={"sub": str(user.id)})
-    return {"access_token": access_token, "token_type": "bearer"}
+        print(f"根据学号查找用户: {user}")
+        
+        if not user:
+            user = await User.filter(
+                name=form_data.username
+            ).first()
+            print(f"根据姓名查找用户: {user}")
+        
+        if not user:
+            print("用户不存在")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="用户名或密码错误",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # 验证密码
+        print(f"验证密码: {form_data.password}")
+        print(f"存储的密码哈希: {user.password_hash}")
+        if not verify_password(form_data.password, user.password_hash):
+            print("密码验证失败")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="用户名或密码错误",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        
+        # 生成Token
+        print(f"生成Token for user: {user.id}")
+        access_token = create_access_token(data={"sub": str(user.id)})
+        print(f"Token生成成功: {access_token[:20]}...")
+        return {"access_token": access_token, "token_type": "bearer"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"登录失败，错误: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"登录失败: {str(e)}")
 
 @router.post("/logout")
 async def logout(current_user: User = Depends(get_current_user)):

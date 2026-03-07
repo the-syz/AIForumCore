@@ -9,6 +9,7 @@ class Post(models.Model):
     created_at = fields.DatetimeField(auto_now_add=True)
     updated_at = fields.DatetimeField(auto_now=True)
     is_pinned = fields.BooleanField(default=False)
+    is_draft = fields.BooleanField(default=False)
     view_count = fields.IntField(default=0)
     like_count = fields.IntField(default=0)
     comment_count = fields.IntField(default=0)

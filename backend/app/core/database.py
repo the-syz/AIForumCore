@@ -39,7 +39,9 @@ TORTOISE_ORM = {
 
 async def init_db():
     """初始化数据库"""
+    # 初始化Tortoise ORM，使用全局状态
     await Tortoise.init(config=TORTOISE_ORM)
+    # 生成数据库表结构
     await Tortoise.generate_schemas()
     print("数据库初始化成功")
 

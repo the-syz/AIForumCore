@@ -25,30 +25,54 @@ async def upload_paper(
     current_user: User = Depends(get_current_user)
 ):
     """上传论文"""
-    # 验证文件
-    if not file_service.validate_file(file):
-        raise HTTPException(status_code=400, detail="文件类型不支持或文件大小超过限制")
-    
-    # 保存文件
-    file_path = file_service.save_file(file, "paper")
-    
-    # 解析论文
-    metadata = paper_parser.parse(file_path)
-    
-    # 创建论文记录
-    paper = await Paper.create(
-        title=title or metadata.get('title', ''),
-        authors=authors or metadata.get('authors', ''),
-        abstract=abstract or metadata.get('abstract', ''),
-        keywords=keywords or metadata.get('keywords', ''),
-        doi=doi or metadata.get('doi', ''),
-        paper_type=paper_type or metadata.get('paper_type', 'journal'),
-        category=category,
-        file_path=file_path,
-        uploader_id=current_user.id
-    )
-    
-    return paper
+    try:
+        # 尝试重新初始化数据库
+        try:
+            from tortoise import Tortoise
+            from app.core.database import TORTOISE_ORM
+            await Tortoise.init(config=TORTOISE_ORM)
+            print("Tortoise ORM 重新初始化成功")
+        except Exception as e:
+            print(f"Tortoise ORM 初始化失败: {str(e)}")
+        
+        # 验证文件
+        if not file_service.validate_file(file):
+            raise HTTPException(status_code=400, detail="文件类型不支持或文件大小超过限制")
+        
+        # 保存文件
+        file_path = file_service.save_file(file, "paper")
+        print(f"文件保存成功: {file_path}")
+        
+        # 解析论文（如果失败，使用默认值）
+        metadata = {}
+        try:
+            metadata = paper_parser.parse(file_path)
+            print(f"论文解析结果: {metadata}")
+        except Exception as e:
+            print(f"论文解析失败，使用默认值: {str(e)}")
+        
+        # 创建论文记录
+        paper = await Paper.create(
+            title=title or metadata.get('title', '未命名论文'),
+            authors=authors or metadata.get('authors', ''),
+            abstract=abstract or metadata.get('abstract', ''),
+            keywords=keywords or metadata.get('keywords', ''),
+            doi=doi or metadata.get('doi', ''),
+            paper_type=paper_type or metadata.get('paper_type', 'journal'),
+            category=category,
+            file_path=file_path,
+            uploader_id=current_user.id
+        )
+        print(f"论文创建成功: {paper.id}")
+        
+        return paper
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"上传论文失败，错误: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"上传论文失败: {str(e)}")
 
 @router.get("/", response_model=List[PaperListResponse])
 async def list_papers(

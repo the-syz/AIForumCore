@@ -34,7 +34,8 @@ class PaperResponse(PaperBase):
     upload_time: datetime
     download_count: int
     favorite_count: int
-    comment_count: int
+    view_count: int
+    like_count: int
     
     class Config:
         from_attributes = True
