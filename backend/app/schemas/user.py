@@ -49,7 +49,7 @@ class UserResponse(UserBase):
 class Token(BaseModel):
     """令牌模型"""
     access_token: str
-    token_type: str = "bearer"
+    user: UserResponse
 
 class TokenData(BaseModel):
     """令牌数据模型"""

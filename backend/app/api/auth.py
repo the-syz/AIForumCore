@@ -205,7 +205,12 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         print(f"生成Token for user: {user.id}")
         access_token = create_access_token(data={"sub": str(user.id)})
         print(f"Token生成成功: {access_token[:20]}...")
-        return {"access_token": access_token, "token_type": "bearer"}
+        
+        # 构建用户信息
+        from app.schemas.user import UserResponse
+        user_response = UserResponse.model_validate(user)
+        
+        return {"access_token": access_token, "user": user_response}
     except HTTPException:
         raise
     except Exception as e:
