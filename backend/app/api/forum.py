@@ -19,12 +19,14 @@ async def create_comment(
 ):
     """发表评论"""
     try:
-        # 尝试重新初始化数据库
-        try:
-            from app.core.database import TORTOISE_ORM
+        # 确保Tortoise ORM上下文是激活的
+        from tortoise import Tortoise
+        from app.core.database import TORTOISE_ORM
+        
+        # 检查Tortoise是否已经初始化
+        if not Tortoise._inited:
             await Tortoise.init(config=TORTOISE_ORM)
-        except Exception:
-            pass
+            print("Tortoise ORM 初始化成功")
         
         # 检查帖子是否存在
         post = await Post.get_or_none(id=comment_data.post_id)

@@ -15,6 +15,15 @@ async def search_papers(
     page_size: int = Query(20, ge=1, le=100, description="每页数量")
 ):
     """搜索论文"""
+    # 确保Tortoise ORM上下文是激活的
+    from tortoise import Tortoise
+    from app.core.database import TORTOISE_ORM
+    
+    # 检查Tortoise是否已经初始化
+    if not Tortoise._inited:
+        await Tortoise.init(config=TORTOISE_ORM)
+        print("Tortoise ORM 初始化成功")
+    
     search_query = f"%{keyword}%"
     
     # 构建查询条件

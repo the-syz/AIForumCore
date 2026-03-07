@@ -7,7 +7,7 @@
           <el-input v-model="form.account" placeholder="学号/姓名" />
         </el-form-item>
         <el-form-item prop="password">
-          <el-input v-model="form.password" type="password" placeholder="密码" />
+          <el-input v-model="form.password" type="password" placeholder="密码" show-password />
         </el-form-item>
         <el-form-item>
           <el-checkbox v-model="form.remember">记住密码</el-checkbox>
@@ -27,6 +27,7 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { login, getCurrentUserInfo } from '@/api/auth'
+import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -51,10 +52,12 @@ const handleLogin = async () => {
   try {
     const res = await login(form)
     userStore.setToken(res.access_token, form.autoLogin)
-    // 登录成功后获取用户信息
-    const userInfo = await getCurrentUserInfo()
-    userStore.setUserInfo(userInfo)
+    // 直接使用后端返回的用户信息，不需要再调用 getCurrentUserInfo
+    userStore.setUserInfo(res.user)
+    ElMessage.success('登录成功')
     router.push('/')
+  } catch (error) {
+    ElMessage.error('用户名或密码错误')
   } finally {
     loading.value = false
   }

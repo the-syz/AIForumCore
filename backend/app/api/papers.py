@@ -26,14 +26,14 @@ async def upload_paper(
 ):
     """上传论文"""
     try:
-        # 尝试重新初始化数据库
-        try:
-            from tortoise import Tortoise
-            from app.core.database import TORTOISE_ORM
+        # 确保Tortoise ORM上下文是激活的
+        from tortoise import Tortoise
+        from app.core.database import TORTOISE_ORM
+        
+        # 检查Tortoise是否已经初始化
+        if not Tortoise._inited:
             await Tortoise.init(config=TORTOISE_ORM)
-            print("Tortoise ORM 重新初始化成功")
-        except Exception as e:
-            print(f"Tortoise ORM 初始化失败: {str(e)}")
+            print("Tortoise ORM 初始化成功")
         
         # 验证文件
         if not file_service.validate_file(file):

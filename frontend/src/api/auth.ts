@@ -27,8 +27,8 @@ interface RegisterData {
   grade: string
   email: string
   phone: string
-  research_direction: string
-  wechat: string
+  research_direction?: string
+  wechat?: string
 }
 
 interface ChangePasswordData {
@@ -38,13 +38,19 @@ interface ChangePasswordData {
 
 interface LoginResponse {
   access_token: string
-  token_type: string
+  user: UserInfo
 }
 
 export const login = (data: LoginData): Promise<LoginResponse> => {
-  return http.post('/auth/login', {
-    username: data.account,
-    password: data.password
+  // 使用 URLSearchParams 构建表单数据，因为后端使用 OAuth2PasswordRequestForm
+  const formData = new URLSearchParams()
+  formData.append('username', data.account)
+  formData.append('password', data.password)
+  
+  return http.post('/auth/login', formData, {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
   })
 }
 

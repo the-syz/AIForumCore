@@ -5,7 +5,7 @@ import { downloadMockData } from './downloads'
 import { userMockData } from './user'
 
 // 是否使用mock数据
-export const useMock = true
+export const useMock = false
 
 // Mock数据导出
 export const mockData = {

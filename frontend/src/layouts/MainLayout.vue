@@ -39,6 +39,20 @@
             </el-menu-item>
           </el-menu>
         </div>
+        <!-- 搜索栏 -->
+        <div class="navbar-search">
+          <el-input
+            v-model="searchKeyword"
+            placeholder="搜索论文、经验贴..."
+            suffix-icon="el-icon-search"
+            @keyup.enter="handleSearch"
+            size="small"
+          >
+            <template #append>
+              <el-button type="primary" size="small" @click="handleSearch">搜索</el-button>
+            </template>
+          </el-input>
+        </div>
         <div class="navbar-user">
           <template v-if="userInfo">
             <span class="user-name">{{ userInfo.name }}</span>
@@ -77,15 +91,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { HomeFilled, Document, ChatDotRound, Download, User, Setting, CaretBottom } from '@element-plus/icons-vue'
 import { logout } from '@/api/auth'
+import { searchAll } from '@/api/search'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const searchKeyword = ref('')
 
 const activeIndex = computed(() => route.path)
 const isAdmin = computed(() => userStore.isAdmin)
@@ -95,6 +111,18 @@ const handleLogout = async () => {
   await logout()
   userStore.logout()
   router.push('/login')
+}
+
+const handleSearch = async () => {
+  if (!searchKeyword.value.trim()) return
+  
+  try {
+    const results = await searchAll(searchKeyword.value.trim())
+    console.log('搜索结果:', results)
+    // 跳转到搜索结果页，这里可以添加路由跳转逻辑
+  } catch (error) {
+    console.error('搜索失败:', error)
+  }
 }
 </script>
 
@@ -108,6 +136,9 @@ const handleLogout = async () => {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
   }
   
   .navbar-brand {
@@ -128,6 +159,11 @@ const handleLogout = async () => {
     border-bottom: none;
   }
   
+  .navbar-search {
+    margin: 0 20px;
+    min-width: 300px;
+  }
+  
   .navbar-user {
     display: flex;
     align-items: center;
@@ -135,6 +171,28 @@ const handleLogout = async () => {
     
     .user-name {
       margin-right: 10px;
+    }
+  }
+}
+
+.main-content {
+  min-height: 600px;
+  padding: 20px 0;
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+  }
+}
+
+/* 标签栏样式 - 预留位置 */
+.tabs-section {
+  margin-bottom: 20px;
+  
+  .el-tabs {
+    .el-tabs__header {
+      margin-bottom: 20px;
     }
   }
 }

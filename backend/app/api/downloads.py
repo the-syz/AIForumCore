@@ -22,12 +22,14 @@ async def create_download(
 ):
     """上传下载资源（仅管理员）"""
     try:
-        # 尝试重新初始化数据库
-        try:
-            from app.core.database import TORTOISE_ORM
+        # 确保Tortoise ORM上下文是激活的
+        from tortoise import Tortoise
+        from app.core.database import TORTOISE_ORM
+        
+        # 检查Tortoise是否已经初始化
+        if not Tortoise._inited:
             await Tortoise.init(config=TORTOISE_ORM)
-        except Exception:
-            pass
+            print("Tortoise ORM 初始化成功")
         
         # 验证文件
         if not file_service.validate_file(file):

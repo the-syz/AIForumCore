@@ -18,12 +18,14 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
     )
     
     try:
-        # 尝试重新初始化数据库
-        try:
-            from app.core.database import TORTOISE_ORM
+        # 确保Tortoise ORM上下文是激活的
+        from tortoise import Tortoise
+        from app.core.database import TORTOISE_ORM
+        
+        # 检查Tortoise是否已经初始化
+        if not Tortoise._inited:
             await Tortoise.init(config=TORTOISE_ORM)
-        except Exception:
-            pass
+            print("Tortoise ORM 初始化成功")
         
         payload = decode_access_token(token)
         if payload is None:
@@ -55,6 +57,15 @@ async def register(user_data: UserCreate):
     """用户注册"""
     try:
         print(f"收到注册请求: {user_data}")
+        
+        # 确保Tortoise ORM上下文是激活的
+        from tortoise import Tortoise
+        from app.core.database import TORTOISE_ORM
+        
+        # 检查Tortoise是否已经初始化
+        if not Tortoise._inited:
+            await Tortoise.init(config=TORTOISE_ORM)
+            print("Tortoise ORM 初始化成功")
         
         # 检查学号是否已存在
         existing_user = await User.filter(student_id=user_data.student_id).first()
@@ -162,13 +173,14 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     try:
         print(f"收到登录请求: {form_data.username}")
         
-        # 尝试重新初始化数据库
-        try:
-            from app.core.database import TORTOISE_ORM
+        # 确保Tortoise ORM上下文是激活的
+        from tortoise import Tortoise
+        from app.core.database import TORTOISE_ORM
+        
+        # 检查Tortoise是否已经初始化
+        if not Tortoise._inited:
             await Tortoise.init(config=TORTOISE_ORM)
-            print("Tortoise ORM 重新初始化成功")
-        except Exception as e:
-            print(f"Tortoise ORM 初始化失败: {str(e)}")
+            print("Tortoise ORM 初始化成功")
         
         # 查找用户（支持学号/姓名登录）
         user = await User.filter(

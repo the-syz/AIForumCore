@@ -8,45 +8,19 @@
     
     <!-- 搜索框 -->
     <div class="search-section">
-      <el-input
-        v-model="searchKeyword"
-        placeholder="搜索论文、经验贴..."
-        suffix-icon="el-icon-search"
-        @keyup.enter="handleSearch"
-      >
-        <template #append>
-          <el-button type="primary" @click="handleSearch">搜索</el-button>
-        </template>
-      </el-input>
+      <SearchBox @search="handleSearch" />
     </div>
     
     <!-- 论文推荐 -->
     <div class="section">
       <h3>论文推荐</h3>
-      <el-empty v-if="recommendedPapers.length === 0" description="暂无推荐论文" />
-      <el-list v-else>
-        <el-list-item v-for="paper in recommendedPapers" :key="paper.id">
-          <div class="paper-item">
-            <h4>{{ paper.title }}</h4>
-            <p class="paper-authors">{{ paper.authors }}</p>
-            <p class="paper-abstract">{{ paper.abstract }}</p>
-          </div>
-        </el-list-item>
-      </el-list>
+      <PaperList :papers="recommendedPapers" />
     </div>
     
     <!-- 经验贴推荐 -->
     <div class="section">
       <h3>经验贴推荐</h3>
-      <el-empty v-if="recommendedPosts.length === 0" description="暂无推荐经验贴" />
-      <el-list v-else>
-        <el-list-item v-for="post in recommendedPosts" :key="post.id">
-          <div class="post-item">
-            <h4>{{ post.title }}</h4>
-            <p class="post-content">{{ post.content }}</p>
-          </div>
-        </el-list-item>
-      </el-list>
+      <PostList :posts="recommendedPosts" />
     </div>
   </div>
 </template>
@@ -54,24 +28,35 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
+import { getPapers } from '@/api/papers'
+import { getPosts } from '@/api/posts'
+import { searchAll } from '@/api/search'
+import SearchBox from '@/components/SearchBox.vue'
+import PaperList from '@/components/PaperList.vue'
+import PostList from '@/components/PostList.vue'
 
 interface Paper {
   id: number
   title: string
   authors: string
   abstract: string
+  category?: string
+  download_count?: number
 }
 
 interface Post {
   id: number
   title: string
   content: string
+  category?: string
+  view_count?: number
+  comment_count?: number
+  like_count?: number
 }
 
 const userStore = useUserStore()
 const recommendedPapers = ref<Paper[]>([])
 const recommendedPosts = ref<Post[]>([])
-const searchKeyword = ref('')
 
 const welcomeMessage = computed(() => {
   const user = userStore.userInfo
@@ -87,83 +72,107 @@ const currentDate = computed(() => {
   return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${weekdays[date.getDay()]}`
 })
 
-const handleSearch = (keyword: string) => {
-  // 跳转到搜索结果页
-  console.log('搜索关键词:', keyword || searchKeyword.value)
+const handleSearch = async (keyword: string) => {
+  if (!keyword) return
+  
+  try {
+    const results = await searchAll(keyword)
+    console.log('搜索结果:', results)
+    // 跳转到搜索结果页，这里可以添加路由跳转逻辑
+  } catch (error) {
+    console.error('搜索失败:', error)
+  }
 }
 
 onMounted(async () => {
-  // 模拟数据
-  recommendedPapers.value = [
-    {
-      id: 1,
-      title: '深度学习在计算机视觉中的应用',
-      authors: '张三, 李四',
-      abstract: '本文探讨了深度学习在计算机视觉领域的最新应用...'
-    }
-  ]
-  recommendedPosts.value = [
-    {
-      id: 1,
-      title: '研究生学习经验分享',
-      content: '作为一名研究生，我想分享一下我的学习经验...'
-    }
-  ]
+  try {
+    // 使用API获取数据
+    const papers = await getPapers()
+    recommendedPapers.value = papers
+    
+    const posts = await getPosts()
+    recommendedPosts.value = posts
+  } catch (error) {
+    console.error('获取推荐数据失败:', error)
+  }
 })
 </script>
 
-<style scoped lang="scss">
+<style scoped scss>
 .home-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  
   .welcome-section {
     margin-bottom: 30px;
+    text-align: center;
     
     h2 {
       color: #409eff;
       margin-bottom: 10px;
+      font-size: 24px;
     }
     
     p {
       color: #666;
+      font-size: 16px;
     }
   }
   
   .search-section {
-    margin-bottom: 30px;
+    margin-bottom: 40px;
   }
   
   .section {
-    margin-bottom: 40px;
+    margin-bottom: 50px;
     
     h3 {
       margin-bottom: 20px;
       color: #333;
       border-bottom: 1px solid #eaeaea;
       padding-bottom: 10px;
+      font-size: 18px;
+      font-weight: 600;
     }
   }
-  
-  .paper-item,
-  .post-item {
-    h4 {
-      margin-bottom: 10px;
-      color: #333;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .home-container {
+    padding: 15px;
+    
+    .welcome-section h2 {
+      font-size: 20px;
     }
     
-    p {
-      margin-bottom: 10px;
-      color: #666;
+    .welcome-section p {
+      font-size: 14px;
+    }
+    
+    .section h3 {
+      font-size: 16px;
     }
   }
   
-  .paper-authors {
-    font-size: 12px;
-    color: #999;
+  .paper-list,
+  .post-list {
+    grid-template-columns: 1fr;
   }
-  
-  .paper-abstract,
-  .post-content {
-    font-size: 14px;
-    line-height: 1.5;
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .paper-list,
+  .post-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1025px) {
+  .paper-list,
+  .post-list {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 </style>
