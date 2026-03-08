@@ -20,6 +20,9 @@ const routes = [
     children: [
       { path: '', name: 'Home', component: () => import('@/views/Home.vue') },
       { path: 'papers', name: 'Papers', component: () => import('@/views/Papers.vue') },
+      { path: 'papers/:id', name: 'PaperDetail', component: () => import('@/views/PaperDetail.vue') },
+      { path: 'papers/upload', name: 'PaperUpload', component: () => import('@/views/PaperUpload.vue') },
+      { path: 'papers/edit/:id', name: 'PaperEdit', component: () => import('@/views/PaperEdit.vue') },
       { path: 'posts', name: 'Posts', component: () => import('@/views/Posts.vue') },
       { path: 'downloads', name: 'Downloads', component: () => import('@/views/Downloads.vue') },
       { path: 'profile', name: 'Profile', component: () => import('@/views/Profile.vue') },

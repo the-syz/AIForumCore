@@ -38,18 +38,19 @@ interface ChangePasswordData {
 
 interface LoginResponse {
   access_token: string
-  user: UserInfo
+  token_type: string
 }
 
 export const login = (data: LoginData): Promise<LoginResponse> => {
-  // 使用 URLSearchParams 构建表单数据，因为后端使用 OAuth2PasswordRequestForm
-  const formData = new URLSearchParams()
+  // 构建登录请求数据（Form格式）
+  const formData = new FormData()
   formData.append('username', data.account)
   formData.append('password', data.password)
+  formData.append('autoLogin', data.autoLogin.toString())
   
   return http.post('/auth/login', formData, {
     headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
+      'Content-Type': 'multipart/form-data'
     }
   })
 }

@@ -24,9 +24,8 @@ export const useUserStore = defineStore('user', {
   actions: {
     setToken(token: string, autoLogin: boolean = false) {
       this.token = token
-      if (autoLogin) {
-        localStorage.setItem('token', token)
-      }
+      // 无论是否勾选自动登录，都存储token到localStorage
+      localStorage.setItem('token', token)
     },
     setUserInfo(userInfo: UserInfo) {
       this.userInfo = userInfo

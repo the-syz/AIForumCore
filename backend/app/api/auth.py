@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status, Depends, Form
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from app.core.security import verify_password, get_password_hash, create_access_token, decode_access_token
 from app.models.user import User
@@ -168,10 +168,10 @@ async def register(user_data: UserCreate):
             raise HTTPException(status_code=500, detail=f"注册失败: {str(e2)}")
 
 @router.post("/login", response_model=Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+async def login(username: str = Form(...), password: str = Form(...), autoLogin: bool = Form(False)):
     """用户登录"""
     try:
-        print(f"收到登录请求: {form_data.username}")
+        print(f"收到登录请求: {username}, autoLogin: {autoLogin}")
         
         # 确保Tortoise ORM上下文是激活的
         from tortoise import Tortoise
@@ -184,13 +184,13 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
         
         # 查找用户（支持学号/姓名登录）
         user = await User.filter(
-            student_id=form_data.username
+            student_id=username
         ).first()
         print(f"根据学号查找用户: {user}")
         
         if not user:
             user = await User.filter(
-                name=form_data.username
+                name=username
             ).first()
             print(f"根据姓名查找用户: {user}")
         
@@ -203,9 +203,9 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
             )
         
         # 验证密码
-        print(f"验证密码: {form_data.password}")
+        print(f"验证密码: {password}")
         print(f"存储的密码哈希: {user.password_hash}")
-        if not verify_password(form_data.password, user.password_hash):
+        if not verify_password(password, user.password_hash):
             print("密码验证失败")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -213,9 +213,20 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
+        # 根据autoLogin参数设置token有效期
+        from datetime import timedelta
+        if autoLogin:
+            # 长期token：7天有效期
+            expires_delta = timedelta(days=7)
+            print("生成长期Token（7天）")
+        else:
+            # 短期token：2小时有效期
+            expires_delta = timedelta(hours=2)
+            print("生成短期Token（2小时）")
+        
         # 生成Token
         print(f"生成Token for user: {user.id}")
-        access_token = create_access_token(data={"sub": str(user.id)})
+        access_token = create_access_token(data={"sub": str(user.id)}, expires_delta=expires_delta)
         print(f"Token生成成功: {access_token[:20]}...")
         
         # 构建用户信息

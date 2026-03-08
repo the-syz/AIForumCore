@@ -50,10 +50,14 @@ const handleLogin = async () => {
   await formRef.value.validate()
   loading.value = true
   try {
+    // 1. 登录获取token
     const res = await login(form)
     userStore.setToken(res.access_token, form.autoLogin)
-    // 直接使用后端返回的用户信息，不需要再调用 getCurrentUserInfo
-    userStore.setUserInfo(res.user)
+    
+    // 2. 获取用户信息
+    const userInfo = await getCurrentUserInfo()
+    userStore.setUserInfo(userInfo)
+    
     ElMessage.success('登录成功')
     router.push('/')
   } catch (error) {

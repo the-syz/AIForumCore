@@ -1,7 +1,7 @@
 <template>
   <div class="paper-list">
     <el-empty v-if="papers.length === 0" description="暂无推荐论文" />
-    <el-card v-else v-for="paper in papers" :key="paper.id" class="paper-card">
+    <el-card v-else v-for="paper in papers" :key="paper.id" class="paper-card" @click="handlePaperClick(paper.id)">
       <template #header>
         <div class="paper-header">
           <h4 class="paper-title">{{ paper.title }}</h4>
@@ -20,6 +20,8 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router'
+
 interface Paper {
   id: number
   title: string
@@ -32,6 +34,12 @@ interface Paper {
 const props = defineProps<{
   papers: Paper[]
 }>()
+
+const router = useRouter()
+
+const handlePaperClick = (paperId: number) => {
+  router.push(`/papers/${paperId}`)
+}
 </script>
 
 <style scoped scss>
@@ -45,6 +53,13 @@ const props = defineProps<{
   height: 100%;
   display: flex;
   flex-direction: column;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  }
 }
 
 .paper-header {

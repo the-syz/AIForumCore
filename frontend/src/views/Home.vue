@@ -87,8 +87,8 @@ const handleSearch = async (keyword: string) => {
 onMounted(async () => {
   try {
     // 使用API获取数据
-    const papers = await getPapers()
-    recommendedPapers.value = papers
+    const papersResponse = await getPapers()
+    recommendedPapers.value = papersResponse.items || []
     
     const posts = await getPosts()
     recommendedPosts.value = posts

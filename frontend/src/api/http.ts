@@ -3,7 +3,7 @@ import { useUserStore } from '@/store/user'
 
 const http = axios.create({
   baseURL: '/api',
-  timeout: 10000,
+  timeout: 60000, // 增加超时时间到60秒
 })
 
 // 请求拦截器

@@ -77,7 +77,7 @@
     <!-- 主内容 -->
     <main class="main-content">
       <div class="container">
-        <slot></slot>
+        <router-view></router-view>
       </div>
     </main>
 
