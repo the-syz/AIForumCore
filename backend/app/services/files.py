@@ -20,6 +20,8 @@ class FileService:
             path = f"{self.upload_dir}/papers/{datetime.now().strftime('%Y/%m')}"
         elif file_type == 'attachment':
             path = f"{self.upload_dir}/attachments/{datetime.now().strftime('%Y/%m')}"
+        elif file_type == 'editor':
+            path = f"{self.upload_dir}/editor/{datetime.now().strftime('%Y/%m')}"
         else:
             path = f"{self.upload_dir}/temp/{timestamp}"
         
@@ -34,7 +36,7 @@ class FileService:
         
         return file_path
     
-    def validate_file(self, file: UploadFile, max_size: int = 50*1024*1024) -> bool:
+    def validate_file(self, file: UploadFile, file_type: str = '', max_size: int = 50*1024*1024) -> bool:
         """验证文件"""
         # 检查文件大小
         file.file.seek(0, 2)
@@ -45,7 +47,13 @@ class FileService:
             return False
         
         # 检查文件类型
-        allowed_extensions = ['.pdf', '.doc', '.docx', '.md', '.txt']
+        if file_type == 'editor':
+            # 富文本编辑器允许的文件类型
+            allowed_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp']
+        else:
+            # 其他文件类型
+            allowed_extensions = ['.pdf', '.doc', '.docx', '.md', '.txt']
+        
         ext = os.path.splitext(file.filename)[1].lower()
         if ext not in allowed_extensions:
             return False

@@ -17,11 +17,21 @@ interface Post {
 }
 
 // 获取经验贴列表
-export const getPosts = async (): Promise<Post[]> => {
+export const getPosts = async (category: string = '', skip: number = 0, limit: number = 20): Promise<Post[]> => {
   if (useMock) {
-    return Promise.resolve(mockData.posts)
+    let filteredPosts = mockData.posts
+    if (category) {
+      filteredPosts = filteredPosts.filter(p => p.category === category)
+    }
+    return Promise.resolve(filteredPosts.slice(skip, skip + limit))
   }
-  return http.get('/posts/')
+  return http.get('/posts/', {
+    params: {
+      category,
+      skip,
+      limit
+    }
+  })
 }
 
 // 获取经验贴详情

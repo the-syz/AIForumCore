@@ -7,7 +7,7 @@ from app.schemas.post import PostCreate, PostResponse, PostUpdate, PostListRespo
 from app.services.files import FileService
 import json
 
-router = APIRouter(prefix="/posts", tags=["经验贴"])
+router = APIRouter(prefix="", tags=["经验贴"])
 file_service = FileService()
 
 @router.post("/", response_model=PostResponse, status_code=status.HTTP_201_CREATED)
@@ -112,6 +112,7 @@ async def list_posts(
                 "id": post.id,
                 "title": post.title,
                 "category": post.category,
+                "author_id": post.author.id if post.author else 0,
                 "author_name": author_name,
                 "created_at": post.created_at,
                 "updated_at": post.updated_at,
