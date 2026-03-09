@@ -2,14 +2,21 @@
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 from contextlib import asynccontextmanager
+import os
 
 # 数据库初始化
 from app.core.database import init_db, close_db
 
 # API 路由
-from app.api import auth, users, papers, posts, downloads, forum, search, editor
+from app.api import auth, users, papers, posts, downloads, forum, search, editor, files
+
+# 确保uploads目录存在
+os.makedirs("uploads/papers", exist_ok=True)
+os.makedirs("uploads/attachments", exist_ok=True)
+os.makedirs("uploads/editor", exist_ok=True)
 
 
 @asynccontextmanager
@@ -53,7 +60,11 @@ app.include_router(downloads.router, prefix="/api/downloads", tags=["下载中�
 app.include_router(forum.router, prefix="/api/forum", tags=["论坛"])
 app.include_router(search.router, prefix="/api/search", tags=["搜索"])
 app.include_router(editor.router, prefix="/api", tags=["富文本编辑器"])
+app.include_router(files.router, prefix="/api/files", tags=["文件上传"])
 # app.include_router(ai.router, prefix="/api/ai", tags=["AI"])
+
+# 挂载静态文件目录
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 
 @app.get("/")

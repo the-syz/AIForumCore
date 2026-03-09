@@ -50,7 +50,19 @@ export const uploadDownload = async (formData: FormData): Promise<Download> => {
     mockData.downloads.push(newDownload)
     return Promise.resolve(newDownload)
   }
-  return http.post('/downloads/', formData)
+  const token = localStorage.getItem('token')
+  const response = await fetch('/api/downloads/', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    body: formData
+  })
+  if (!response.ok) {
+    const error = await response.json()
+    throw new Error(error.detail || '上传失败')
+  }
+  return response.json()
 }
 
 // 更新下载资源
@@ -91,6 +103,8 @@ export const downloadResource = async (id: number): Promise<void> => {
     console.log(`下载资源 ID: ${id}`)
     return Promise.resolve()
   }
+  // 先获取资源详情以获取真实文件名
+  const downloadInfo = await getDownloadById(id)
   // 真实API需要处理文件下载
   const response = await fetch(`/api/downloads/${id}/download`, {
     headers: {
@@ -101,7 +115,7 @@ export const downloadResource = async (id: number): Promise<void> => {
   const url = window.URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = `resource_${id}.pdf`
+  a.download = downloadInfo.file_name
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)

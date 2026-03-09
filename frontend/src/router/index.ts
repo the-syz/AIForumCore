@@ -28,6 +28,9 @@ const routes = [
       { path: 'posts/create', name: 'PostCreate', component: () => import('@/views/PostCreate.vue') },
       { path: 'posts/edit/:id', name: 'PostEdit', component: () => import('@/views/PostEdit.vue') },
       { path: 'downloads', name: 'Downloads', component: () => import('@/views/Downloads.vue') },
+      { path: 'downloads/:id', name: 'DownloadDetail', component: () => import('@/views/DownloadDetail.vue') },
+      { path: 'downloads/upload', name: 'DownloadUpload', component: () => import('@/views/DownloadUpload.vue'), meta: { admin: true } },
+      { path: 'downloads/edit/:id', name: 'DownloadEdit', component: () => import('@/views/DownloadEdit.vue'), meta: { admin: true } },
       { path: 'profile', name: 'Profile', component: () => import('@/views/Profile.vue') },
       { path: 'admin', name: 'Admin', component: () => import('@/views/Admin.vue'), meta: { admin: true } }
     ]

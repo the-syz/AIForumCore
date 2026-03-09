@@ -16,37 +16,49 @@ async def create_post(
     content: str = Form(...),
     category: str = Form(...),
     is_draft: bool = Form(default=False),
+    attachments_json: str = Form(default=""),
     files: List[UploadFile] = File(default=[]),
     current_user: User = Depends(get_current_user)
 ):
     """发布经验贴"""
     try:
-        # 确保Tortoise ORM上下文是激活的
         from tortoise import Tortoise
         from app.core.database import TORTOISE_ORM
         
-        # 检查Tortoise是否已经初始化
         if not Tortoise._inited:
             await Tortoise.init(config=TORTOISE_ORM)
             print("Tortoise ORM 初始化成功")
         
-        # 处理附件
         attachments = []
+        
+        if attachments_json:
+            try:
+                attachments_data = json.loads(attachments_json)
+                for item in attachments_data:
+                    file_path = item.get('path', '')
+                    file_name = item.get('name', '')
+                    if file_path:
+                        attachments.append({
+                            "path": file_path,
+                            "name": file_name
+                        })
+            except json.JSONDecodeError:
+                print(f"解析附件JSON失败: {attachments_json}")
+        
         for file in files:
             if file_service.validate_file(file):
-                file_path = file_service.save_file(file, "attachment")
-                attachments.append(file_path)
+                result = file_service.save_file(file, "attachment")
+                attachments.append(result)
         
-        # 创建经验贴
         post = await Post.create(
             title=title,
             content=content,
             category=category,
             is_draft=is_draft,
-            author=current_user
+            author=current_user,
+            attachments=attachments
         )
         
-        # 构建响应
         response_data = {
             "id": post.id,
             "title": post.title,
@@ -175,7 +187,7 @@ async def get_post(
         "view_count": post.view_count,
         "like_count": post.like_count,
         "comment_count": post.comment_count,
-        "attachments": []  # 这里可以添加附件处理逻辑
+        "attachments": post.attachments
     }
     
     return response_data

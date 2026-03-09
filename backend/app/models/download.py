@@ -6,6 +6,7 @@ class Download(models.Model):
     title = fields.CharField(max_length=255, null=False)
     description = fields.TextField(null=True)
     file_path = fields.CharField(max_length=255, null=False)
+    file_name = fields.CharField(max_length=255, null=False)
     upload_time = fields.DatetimeField(auto_now_add=True)
     download_count = fields.IntField(default=0)
     category = fields.CharField(max_length=50, null=False)

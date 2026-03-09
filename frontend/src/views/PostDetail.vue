@@ -17,6 +17,23 @@
       <!-- 经验贴内容 -->
       <div class="post-content" v-html="post.content"></div>
       
+      <!-- 附件列表 -->
+      <div class="attachments-section" v-if="post.attachments && post.attachments.length > 0">
+        <h3>附件</h3>
+        <el-list>
+          <el-list-item v-for="(attachment, index) in post.attachments" :key="index">
+            <div class="attachment-item">
+              <el-icon><Document /></el-icon>
+              <span class="attachment-name">{{ getAttachmentName(attachment) }}</span>
+              <el-button type="primary" size="small" @click="downloadAttachment(attachment)">
+                <el-icon><Download /></el-icon>
+                下载
+              </el-button>
+            </div>
+          </el-list-item>
+        </el-list>
+      </div>
+      
       <!-- 操作按钮 -->
       <div class="post-actions">
         <el-button v-if="canManagePost()" type="primary" @click="handleEdit">编辑</el-button>
@@ -85,8 +102,10 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { getPostById, deletePost } from '@/api/posts'
+import { getComments, createComment as apiCreateComment } from '@/api/forum'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
+import { Download, Document } from '@element-plus/icons-vue'
 
 interface Post {
   id: number
@@ -173,23 +192,17 @@ const fetchPostDetail = async () => {
   try {
     const response = await getPostById(postId)
     post.value = response
-    // 模拟评论数据，实际应该从后端获取
-    comments.value = [
-      {
-        id: 1,
-        content: '这篇经验贴非常有用，谢谢分享！',
-        author_id: 2,
-        author_name: '李四',
-        created_at: '2026-03-05T10:00:00'
-      },
-      {
-        id: 2,
-        content: '请问具体是如何实现的呢？',
-        author_id: 3,
-        author_name: '王五',
-        created_at: '2026-03-05T11:00:00'
-      }
-    ]
+    // 从后端获取真实评论数据
+    const commentsData = await getComments(postId)
+    // 处理评论数据格式
+    comments.value = commentsData.map((comment: any) => ({
+      id: comment.id,
+      content: comment.content,
+      author_id: comment.user_id,
+      author_name: comment.user_name,
+      created_at: comment.created_at,
+      parent_id: comment.parent_id
+    }))
   } catch (error) {
     ElMessage.error('获取经验贴详情失败')
     console.error('获取经验贴详情失败:', error)
@@ -220,13 +233,16 @@ const handleSubmitComment = async () => {
   await commentFormRef.value.validate()
   submittingComment.value = true
   try {
-    // 模拟评论提交，实际应该调用后端API
+    // 调用后端API提交评论
+    const response = await apiCreateComment(commentForm.value.content, postId)
+    // 处理返回的评论数据
     const newComment: Comment = {
-      id: comments.value.length + 1,
-      content: commentForm.value.content,
-      author_id: 1,
-      author_name: '当前用户',
-      created_at: new Date().toISOString()
+      id: response.id,
+      content: response.content,
+      author_id: response.user_id,
+      author_name: response.user_name || '当前用户',
+      created_at: response.created_at,
+      parent_id: response.parent_id
     }
     comments.value.push(newComment)
     commentForm.value.content = ''
@@ -249,14 +265,16 @@ const handleSubmitReply = async () => {
   await replyFormRef.value.validate()
   submittingReply.value = true
   try {
-    // 模拟回复提交，实际应该调用后端API
+    // 调用后端API提交回复
+    const response = await apiCreateComment(replyForm.value.content, postId, replyingComment.value?.id)
+    // 处理返回的回复数据
     const newReply: Comment = {
-      id: comments.value.length + 1,
-      content: replyForm.value.content,
-      author_id: 1,
-      author_name: '当前用户',
-      created_at: new Date().toISOString(),
-      parent_id: replyingComment.value?.id
+      id: response.id,
+      content: response.content,
+      author_id: response.user_id,
+      author_name: response.user_name || '当前用户',
+      created_at: response.created_at,
+      parent_id: response.parent_id
     }
     comments.value.push(newReply)
     replyForm.value.content = ''
@@ -280,6 +298,55 @@ const formatDate = (dateString: string) => {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+// 从文件路径中提取文件名
+const getAttachmentName = (attachment: any) => {
+  if (typeof attachment === 'object' && attachment.name) {
+    return attachment.name
+  }
+  if (typeof attachment === 'string') {
+    const parts = attachment.split('/')
+    return parts[parts.length - 1]
+  }
+  return '未知文件'
+}
+
+// 获取附件路径
+const getAttachmentPath = (attachment: any) => {
+  if (typeof attachment === 'object' && attachment.path) {
+    return attachment.path
+  }
+  return attachment
+}
+
+// 下载附件
+const downloadAttachment = async (attachment: any) => {
+  try {
+    const filePath = getAttachmentPath(attachment)
+    const fileName = getAttachmentName(attachment)
+    const response = await fetch(`/api/files/upload/download?file_path=${encodeURIComponent(filePath)}&file_name=${encodeURIComponent(fileName)}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('token')}`
+      }
+    })
+    if (!response.ok) {
+      throw new Error('下载失败')
+    }
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = fileName
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('下载开始')
+  } catch (error) {
+    ElMessage.error('下载失败，请重试')
+    console.error('下载附件失败:', error)
+  }
 }
 
 // 初始化加载数据
@@ -355,6 +422,30 @@ onMounted(() => {
     margin-top: 30px;
     display: flex;
     gap: 10px;
+  }
+  
+  .attachments-section {
+    margin: 30px 0;
+    
+    h3 {
+      margin-bottom: 15px;
+      color: #333;
+      font-size: 16px;
+      font-weight: 500;
+    }
+    
+    .attachment-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+      
+      .attachment-name {
+        flex: 1;
+        color: #333;
+      }
+    }
   }
   
   .comments-section {

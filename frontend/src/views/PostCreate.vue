@@ -41,18 +41,19 @@
         <!-- 附件上传 -->
         <el-form-item label="附件">
           <el-upload
-            action="#"
-            :auto-upload="false"
-            :on-change="handleFileChange"
+            v-model:file-list="fileList"
+            :action="uploadUrl"
+            :headers="uploadHeaders"
+            :on-success="handleUploadSuccess"
+            :on-error="handleUploadError"
             :on-remove="handleFileRemove"
-            :on-preview="handleFilePreview"
-            :file-list="fileList"
+            :before-upload="beforeUpload"
             :limit="5"
             multiple
           >
             <el-button type="primary" plain>选择文件</el-button>
             <template #tip>
-              <div class="upload-tip">最多上传5个文件，支持图片、文档等格式</div>
+              <div class="upload-tip">最多上传5个文件，支持图片、文档等格式，文件会自动上传</div>
             </template>
           </el-upload>
         </el-form-item>
@@ -73,12 +74,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { createPost } from '@/api/posts'
+import { useUserStore } from '@/store/user'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
+const userStore = useUserStore()
 const formRef = ref<InstanceType<typeof import('element-plus')['ElForm']>>()
 const loading = ref(false)
 
@@ -90,8 +93,13 @@ const form = ref({
 })
 
 const fileList = ref<any[]>([])
+const uploadedFiles = ref<{name: string, path: string}[]>([])
 
-// 从本地存储加载草稿
+const uploadUrl = '/api/files/upload/attachment'
+const uploadHeaders = computed(() => ({
+  Authorization: `Bearer ${userStore.token}`
+}))
+
 const loadDraft = () => {
   const savedDraft = localStorage.getItem('postDraft')
   if (savedDraft) {
@@ -109,7 +117,6 @@ const loadDraft = () => {
   }
 }
 
-// 保存草稿到本地存储
 const saveDraftToLocal = () => {
   const draftData = {
     title: form.value.title,
@@ -120,12 +127,10 @@ const saveDraftToLocal = () => {
   localStorage.setItem('postDraft', JSON.stringify(draftData))
 }
 
-// 清除本地存储的草稿
 const clearDraft = () => {
   localStorage.removeItem('postDraft')
 }
 
-// 监听表单变化，自动保存草稿
 watch(
   [() => form.value.title, () => form.value.content, () => form.value.category],
   () => {
@@ -134,7 +139,6 @@ watch(
   { deep: true }
 )
 
-// 组件挂载时加载草稿
 onMounted(() => {
   loadDraft()
 })
@@ -157,16 +161,35 @@ const editorConfig = {
   maximumWords: 10000
 }
 
-const handleFileChange = (file: any, newFileList: any[]) => {
-  fileList.value = newFileList
+const beforeUpload = (file: File) => {
+  const maxSize = 50 * 1024 * 1024
+  if (file.size > maxSize) {
+    ElMessage.error('文件大小不能超过50MB')
+    return false
+  }
+  return true
 }
 
-const handleFileRemove = (file: any, newFileList: any[]) => {
-  fileList.value = newFileList
+const handleUploadSuccess = (response: any, file: any, fileList: any[]) => {
+  if (response && response.file_path) {
+    uploadedFiles.value.push({
+      name: file.name,
+      path: response.file_path
+    })
+    ElMessage.success('文件上传成功')
+  }
 }
 
-const handleFilePreview = (file: any) => {
-  console.log('文件预览:', file)
+const handleUploadError = (error: any, file: any, fileList: any[]) => {
+  ElMessage.error('文件上传失败')
+  console.error('上传失败:', error)
+}
+
+const handleFileRemove = (file: any, fileList: any[]) => {
+  const index = uploadedFiles.value.findIndex(f => f.name === file.name)
+  if (index !== -1) {
+    uploadedFiles.value.splice(index, 1)
+  }
 }
 
 const handleSubmit = () => {
@@ -179,13 +202,13 @@ const handleSubmit = () => {
       formData.append('category', form.value.category)
       formData.append('is_draft', form.value.is_draft.toString())
       
-      fileList.value.forEach(file => {
-        formData.append('files', file.raw)
-      })
+      if (uploadedFiles.value.length > 0) {
+        formData.append('attachments_json', JSON.stringify(uploadedFiles.value))
+      }
       
       createPost(formData).then(() => {
         ElMessage.success(form.value.is_draft ? '草稿保存成功' : '经验贴发布成功')
-        clearDraft() // 提交成功后清除本地草稿
+        clearDraft()
         router.push('/posts')
       }).catch(error => {
         ElMessage.error('发布失败，请重试')

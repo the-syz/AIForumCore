@@ -8,33 +8,33 @@ class FileService:
     def __init__(self, upload_dir: str = "uploads"):
         self.upload_dir = upload_dir
     
-    def save_file(self, file: UploadFile, file_type: str) -> str:
-        """保存文件"""
-        # 生成唯一文件名
+    def save_file(self, file: UploadFile, file_type: str) -> dict:
+        """保存文件，返回包含路径和原始文件名的字典"""
         timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
-        ext = os.path.splitext(file.filename)[1]
+        original_name = file.filename
+        ext = os.path.splitext(original_name)[1]
         file_name = f"{timestamp}_{uuid.uuid4().hex[:8]}{ext}"
         
-        # 确定存储路径
         if file_type == 'paper':
-            path = f"{self.upload_dir}/papers/{datetime.now().strftime('%Y/%m')}"
+            path = os.path.join(self.upload_dir, "papers", datetime.now().strftime('%Y'), datetime.now().strftime('%m'))
         elif file_type == 'attachment':
-            path = f"{self.upload_dir}/attachments/{datetime.now().strftime('%Y/%m')}"
+            path = os.path.join(self.upload_dir, "attachments", datetime.now().strftime('%Y'), datetime.now().strftime('%m'))
         elif file_type == 'editor':
-            path = f"{self.upload_dir}/editor/{datetime.now().strftime('%Y/%m')}"
+            path = os.path.join(self.upload_dir, "editor", datetime.now().strftime('%Y'), datetime.now().strftime('%m'))
         else:
-            path = f"{self.upload_dir}/temp/{timestamp}"
+            path = os.path.join(self.upload_dir, "temp", timestamp)
         
-        # 确保目录存在
         os.makedirs(path, exist_ok=True)
         
-        # 保存文件
         file_path = os.path.join(path, file_name)
         with open(file_path, 'wb') as f:
             content = file.file.read()
             f.write(content)
         
-        return file_path
+        return {
+            "path": file_path.replace(os.sep, '/'),
+            "name": original_name
+        }
     
     def validate_file(self, file: UploadFile, file_type: str = '', max_size: int = 50*1024*1024) -> bool:
         """验证文件"""
@@ -50,9 +50,22 @@ class FileService:
         if file_type == 'editor':
             # 富文本编辑器允许的文件类型
             allowed_extensions = ['.png', '.jpg', '.jpeg', '.gif', '.bmp']
+        elif file_type == 'attachment':
+            # 附件允许的文件类型 - 扩大范围
+            allowed_extensions = [
+                '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+                '.txt', '.md', '.zip', '.rar', '.7z',
+                '.png', '.jpg', '.jpeg', '.gif', '.bmp',
+                '.mp4', '.mp3', '.wav', '.avi'
+            ]
         else:
-            # 其他文件类型
-            allowed_extensions = ['.pdf', '.doc', '.docx', '.md', '.txt']
+            # 其他文件类型 - 允许所有常见格式
+            allowed_extensions = [
+                '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+                '.txt', '.md', '.zip', '.rar', '.7z',
+                '.png', '.jpg', '.jpeg', '.gif', '.bmp',
+                '.mp4', '.mp3', '.wav', '.avi'
+            ]
         
         ext = os.path.splitext(file.filename)[1].lower()
         if ext not in allowed_extensions:

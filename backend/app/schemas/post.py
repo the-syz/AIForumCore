@@ -1,6 +1,12 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Union
+from typing import Any
+
+class AttachmentInfo(BaseModel):
+    """附件信息模型"""
+    path: str
+    name: str
 
 class PostBase(BaseModel):
     """经验贴基础模型"""
@@ -31,7 +37,7 @@ class PostResponse(PostBase):
     like_count: int
     comment_count: int
     is_draft: bool = False
-    attachments: List[str] = []
+    attachments: List[Any] = []
     
     class Config:
         from_attributes = True

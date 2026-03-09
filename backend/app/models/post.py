@@ -13,6 +13,7 @@ class Post(models.Model):
     view_count = fields.IntField(default=0)
     like_count = fields.IntField(default=0)
     comment_count = fields.IntField(default=0)
+    attachments = fields.JSONField(default=list)
     
     # 关系
     author = fields.ForeignKeyField("models.User", related_name="posts", on_delete=fields.CASCADE)

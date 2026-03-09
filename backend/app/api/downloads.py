@@ -32,11 +32,12 @@ async def create_download(
             print("Tortoise ORM 初始化成功")
         
         # 验证文件
-        if not file_service.validate_file(file):
+        if not file_service.validate_file(file, "attachment"):
             raise HTTPException(status_code=400, detail="文件验证失败：文件类型或大小不符合要求")
         
         # 保存文件
         file_path = file_service.save_file(file, "attachment")
+        file_name = file.filename or "unknown"
         
         # 创建下载资源记录
         download = await Download.create(
@@ -44,6 +45,7 @@ async def create_download(
             description=description,
             category=category,
             file_path=file_path,
+            file_name=file_name,
             uploader=current_user
         )
         

@@ -35,8 +35,6 @@
             </div>
             <div class="post-actions">
               <el-button size="small" @click="handleView(post)">查看</el-button>
-              <el-button v-if="canManagePost(post)" size="small" @click="handleEdit(post)">编辑</el-button>
-              <el-button v-if="canManagePost(post)" size="small" type="danger" @click="handleDelete(post.id)">删除</el-button>
             </div>
           </el-card>
         </div>
@@ -70,8 +68,6 @@
             </div>
             <div class="post-actions">
               <el-button size="small" @click="handleView(post)">查看</el-button>
-              <el-button v-if="canManagePost(post)" size="small" @click="handleEdit(post)">编辑</el-button>
-              <el-button v-if="canManagePost(post)" size="small" type="danger" @click="handleDelete(post.id)">删除</el-button>
             </div>
           </el-card>
         </div>
@@ -105,8 +101,6 @@
             </div>
             <div class="post-actions">
               <el-button size="small" @click="handleView(post)">查看</el-button>
-              <el-button v-if="canManagePost(post)" size="small" @click="handleEdit(post)">编辑</el-button>
-              <el-button v-if="canManagePost(post)" size="small" type="danger" @click="handleDelete(post.id)">删除</el-button>
             </div>
           </el-card>
         </div>
@@ -140,8 +134,6 @@
             </div>
             <div class="post-actions">
               <el-button size="small" @click="handleView(post)">查看</el-button>
-              <el-button v-if="canManagePost(post)" size="small" @click="handleEdit(post)">编辑</el-button>
-              <el-button v-if="canManagePost(post)" size="small" type="danger" @click="handleDelete(post.id)">删除</el-button>
             </div>
           </el-card>
         </div>

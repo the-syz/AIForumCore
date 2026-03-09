@@ -22,6 +22,7 @@ class DownloadResponse(DownloadBase):
     """下载资源响应模型"""
     id: int
     file_path: str
+    file_name: str
     upload_time: datetime
     download_count: int
     uploader_id: int
