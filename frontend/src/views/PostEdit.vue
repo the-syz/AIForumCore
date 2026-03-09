@@ -102,7 +102,7 @@ const rules = {
 }
 
 const editorConfig = {
-  serverUrl: '/api/editor/upload',
+  serverUrl: '/api/editor/config',
   UEDITOR_HOME_URL: '/static/UEditorPlus/',
   UEDITOR_CORS_URL: '/static/UEditorPlus/',
   initialFrameWidth: '100%',

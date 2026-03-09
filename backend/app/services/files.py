@@ -27,9 +27,20 @@ class FileService:
         os.makedirs(path, exist_ok=True)
         
         file_path = os.path.join(path, file_name)
+        
+        # 确保文件指针在文件开头
+        file.file.seek(0)
+        
         with open(file_path, 'wb') as f:
             content = file.file.read()
             f.write(content)
+        
+        # 验证文件是否保存成功
+        if os.path.exists(file_path):
+            file_size = os.path.getsize(file_path)
+            print(f"文件保存成功: {file_path}, 大小: {file_size} bytes")
+        else:
+            print(f"文件保存失败: {file_path}")
         
         return {
             "path": file_path.replace(os.sep, '/'),
