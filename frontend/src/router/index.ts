@@ -32,6 +32,8 @@ const routes = [
       { path: 'downloads/upload', name: 'DownloadUpload', component: () => import('@/views/DownloadUpload.vue'), meta: { admin: true } },
       { path: 'downloads/edit/:id', name: 'DownloadEdit', component: () => import('@/views/DownloadEdit.vue'), meta: { admin: true } },
       { path: 'profile', name: 'Profile', component: () => import('@/views/Profile.vue') },
+      { path: 'user/:id', name: 'UserProfile', component: () => import('@/views/UserProfile.vue') },
+      { path: 'search', name: 'SearchResults', component: () => import('@/views/SearchResults.vue') },
       { path: 'admin', name: 'Admin', component: () => import('@/views/Admin.vue'), meta: { admin: true } }
     ]
   }

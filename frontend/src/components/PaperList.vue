@@ -12,7 +12,12 @@
         <p class="paper-abstract">{{ paper.abstract }}</p>
         <div class="paper-footer">
           <span class="paper-category">{{ paper.category }}</span>
-          <span class="paper-downloads">下载 {{ paper.download_count || 0 }} 次</span>
+          <span class="paper-time">
+            <i class="el-icon-time"></i> {{ formatDate(paper.upload_time) }}
+          </span>
+          <span class="paper-downloads">
+            <i class="el-icon-download"></i> {{ paper.download_count || 0 }} 次
+          </span>
         </div>
       </div>
     </el-card>
@@ -29,6 +34,7 @@ interface Paper {
   abstract: string
   category?: string
   download_count?: number
+  upload_time?: string
 }
 
 const props = defineProps<{
@@ -36,6 +42,12 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
+
+const formatDate = (dateString?: string) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
 
 const handlePaperClick = (paperId: number) => {
   router.push(`/papers/${paperId}`)
@@ -104,6 +116,8 @@ const handlePaperClick = (paperId: number) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
   font-size: 12px;
   color: #999;
   margin-top: auto;
@@ -118,8 +132,10 @@ const handlePaperClick = (paperId: number) => {
   border-radius: 10px;
 }
 
+.paper-time,
 .paper-downloads {
   display: flex;
   align-items: center;
+  gap: 4px;
 }
 </style>

@@ -4,7 +4,7 @@
     <el-tabs>
       <el-tab-pane label="用户管理">
         <div class="search-section">
-          <el-button type="primary">添加用户</el-button>
+          <el-button type="primary" @click="showAddUserDialog = true">添加用户</el-button>
           <el-input
             v-model="userSearchKeyword"
             placeholder="搜索用户姓名"
@@ -17,16 +17,46 @@
           </el-input>
           <el-button type="info" @click="resetUserSearch">重置</el-button>
         </div>
-        <el-table :data="filteredUsers" style="width: 100%">
+        <el-table :data="filteredUsers" style="width: 100%" v-loading="usersLoading">
           <el-table-column prop="id" label="ID" width="80" />
           <el-table-column prop="name" label="姓名" />
           <el-table-column prop="student_id" label="学号/工号" />
-          <el-table-column prop="role" label="角色" />
-          <el-table-column prop="is_admin" label="是否管理员" />
-          <el-table-column label="操作" width="150">
+          <el-table-column label="身份" width="120">
+            <template #default="{ row }">
+              {{ getRoleDisplay(row.role) }}
+            </template>
+          </el-table-column>
+          <el-table-column label="是否管理员" width="120">
+            <template #default="{ row }">
+              <el-tag :type="row.is_admin ? 'danger' : 'info'">
+                {{ row.is_admin ? '是' : '否' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="280">
             <template #default="scope">
               <el-button size="small" @click="handleEditUser(scope.row)">编辑</el-button>
-              <el-button size="small" type="danger" @click="handleDeleteUser(scope.row)">删除</el-button>
+              <el-button 
+                size="small" 
+                @click="handleSetRole(scope.row)"
+                :disabled="
+                  // 教师用户无法修改自己的身份和管理员权限
+                  (scope.row.role === 'teacher' && scope.row.id === currentUser?.value?.id) ||
+                  // 学生管理员无法修改其他教师的权限
+                  (currentUser?.value?.role !== 'teacher' && scope.row.role === 'teacher')
+                "
+              >权限</el-button>
+              <el-button 
+                size="small" 
+                type="danger" 
+                @click="handleDeleteUser(scope.row)"
+                :disabled="
+                  // 无法删除自己
+                  scope.row.id === currentUser?.value?.id ||
+                  // 学生管理员无法删除教师
+                  (currentUser?.value?.role !== 'teacher' && scope.row.role === 'teacher')
+                "
+              >删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -50,7 +80,11 @@
           <el-table-column prop="title" label="标题" />
           <el-table-column prop="authors" label="作者" />
           <el-table-column prop="paper_type" label="类型" width="100" />
-          <el-table-column prop="upload_time" label="上传时间" width="180" />
+          <el-table-column prop="upload_time" label="上传时间" width="180">
+            <template #default="{ row }">
+              {{ formatDate(row.upload_time) }}
+            </template>
+          </el-table-column>
           <el-table-column prop="download_count" label="下载次数" width="100" />
           <el-table-column label="操作" width="200">
             <template #default="scope">
@@ -90,7 +124,11 @@
           <el-table-column prop="id" label="ID" width="80" />
           <el-table-column prop="title" label="标题" />
           <el-table-column prop="category" label="分类" width="100" />
-          <el-table-column prop="created_at" label="创建时间" width="180" />
+          <el-table-column prop="created_at" label="创建时间" width="180">
+            <template #default="{ row }">
+              {{ formatDate(row.created_at) }}
+            </template>
+          </el-table-column>
           <el-table-column prop="view_count" label="浏览量" width="80" />
           <el-table-column label="状态" width="100">
             <template #default="scope">
@@ -144,7 +182,11 @@
           <el-table-column prop="id" label="ID" width="80" />
           <el-table-column prop="title" label="标题" />
           <el-table-column prop="category" label="分类" width="100" />
-          <el-table-column prop="upload_time" label="上传时间" width="180" />
+          <el-table-column prop="upload_time" label="上传时间" width="180">
+            <template #default="{ row }">
+              {{ formatDate(row.upload_time) }}
+            </template>
+          </el-table-column>
           <el-table-column prop="download_count" label="下载次数" width="100" />
           <el-table-column label="操作" width="200">
             <template #default="scope">
@@ -155,6 +197,118 @@
         </el-table>
       </el-tab-pane>
     </el-tabs>
+
+    <el-dialog v-model="showAddUserDialog" title="添加用户" width="500px">
+      <el-form :model="addUserForm" :rules="addUserRules" ref="addUserFormRef" label-width="100px">
+        <el-form-item label="姓名" prop="name">
+          <el-input v-model="addUserForm.name" />
+        </el-form-item>
+        <el-form-item label="学号" prop="student_id">
+          <el-input v-model="addUserForm.student_id" />
+        </el-form-item>
+        <el-form-item label="密码" prop="password">
+          <el-input v-model="addUserForm.password" type="password" show-password />
+        </el-form-item>
+        <el-form-item label="年级" prop="grade">
+          <el-input v-model="addUserForm.grade" />
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="addUserForm.email" />
+        </el-form-item>
+        <el-form-item label="电话" prop="phone">
+          <el-input v-model="addUserForm.phone" />
+        </el-form-item>
+        <el-form-item label="研究方向" prop="research_direction">
+          <el-input v-model="addUserForm.research_direction" />
+        </el-form-item>
+        <el-form-item label="微信" prop="wechat">
+          <el-input v-model="addUserForm.wechat" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showAddUserDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleAddUser" :loading="addingUser">添加</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="showEditUserDialog" title="编辑用户" width="500px">
+      <el-form :model="editUserForm" :rules="editUserRules" ref="editUserFormRef" label-width="100px">
+        <el-form-item label="姓名" prop="name">
+          <el-input v-model="editUserForm.name" />
+        </el-form-item>
+        <el-form-item label="学号" prop="student_id">
+          <el-input v-model="editUserForm.student_id" disabled />
+        </el-form-item>
+        <el-form-item label="年级" prop="grade">
+          <el-input v-model="editUserForm.grade" />
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <el-input v-model="editUserForm.email" />
+        </el-form-item>
+        <el-form-item label="电话" prop="phone">
+          <el-input v-model="editUserForm.phone" />
+        </el-form-item>
+        <el-form-item label="研究方向" prop="research_direction">
+          <el-input v-model="editUserForm.research_direction" />
+        </el-form-item>
+        <el-form-item label="微信" prop="wechat">
+          <el-input v-model="editUserForm.wechat" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showEditUserDialog = false">取消</el-button>
+        <el-button type="primary" @click="handleUpdateUser" :loading="updatingUser">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog v-model="showSetRoleDialog" title="设置权限" width="400px">
+      <el-form :model="setRoleForm" label-width="100px">
+        <el-form-item label="身份">
+          <el-select 
+            v-model="setRoleForm.role"
+            :disabled="
+              // 教师用户无法修改自己的身份
+              (currentUser?.value?.role === 'teacher' && setRoleForm.id === currentUser.value.id) ||
+              // 学生管理员无法设置教师身份
+              (currentUser?.value?.role !== 'teacher' && setRoleForm.role === 'teacher')
+            "
+          >
+            <el-option label="硕士研究生" value="master" />
+            <el-option label="博士研究生" value="phd" />
+            <el-option label="毕业生" value="graduate" />
+            <el-option 
+              label="教师" 
+              value="teacher"
+              :disabled="currentUser?.value?.role !== 'teacher'"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="管理员">
+          <el-switch 
+            v-model="setRoleForm.is_admin" 
+            :disabled="
+              setRoleForm.role === 'graduate' ||
+              // 教师用户无法剥夺自己的管理员权限
+              (currentUser?.value?.role === 'teacher' && setRoleForm.id === currentUser.value.id && currentUser.value.is_admin)
+            " 
+          />
+          <span v-if="setRoleForm.role === 'graduate'" class="tip-text">（毕业生无法设置为管理员）</span>
+          <span v-else-if="currentUser?.value?.role === 'teacher' && setRoleForm.id === currentUser.value.id && currentUser.value.is_admin" class="tip-text">（无法剥夺自己的管理员权限）</span>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="showSetRoleDialog = false">取消</el-button>
+        <el-button 
+          type="primary" 
+          @click="handleUpdateRole" 
+          :loading="updatingRole"
+          :disabled="
+            // 教师用户无法修改自己的身份和管理员权限
+            (currentUser?.value?.role === 'teacher' && setRoleForm.id === currentUser.value.id)
+          "
+        >保存</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -166,8 +320,29 @@ import { Search } from '@element-plus/icons-vue'
 import { getPapers, deletePaper } from '@/api/papers'
 import { getPosts, deletePost, pinPost } from '@/api/posts'
 import { getDownloads, deleteDownload } from '@/api/downloads'
+import { getUsers, createUser, deleteUser, updateUserRole } from '@/api/users'
+import { useUserStore } from '@/store/user'
+import { getCurrentUser } from '@/api/users'
 
 const router = useRouter()
+const userStore = useUserStore()
+
+// 当前用户信息
+const currentUser = ref<any>(null)
+
+// 角色显示映射
+const roleDisplayMap: Record<string, string> = {
+  'master': '硕士研究生',
+  'phd': '博士研究生',
+  'graduate': '毕业生',
+  'teacher': '教师',
+  'student': '学生'  // 兼容旧数据
+}
+
+// 获取角色显示名称
+const getRoleDisplay = (role: string): string => {
+  return roleDisplayMap[role] || role || '未知'
+}
 
 interface User {
   id: number
@@ -175,6 +350,11 @@ interface User {
   student_id: string
   role: string
   is_admin: boolean
+  grade?: string
+  email?: string
+  phone?: string
+  research_direction?: string
+  wechat?: string
 }
 
 interface Paper {
@@ -212,6 +392,10 @@ const downloads = ref<Download[]>([])
 const papersLoading = ref(false)
 const postsLoading = ref(false)
 const downloadsLoading = ref(false)
+const usersLoading = ref(false)
+const addingUser = ref(false)
+const updatingUser = ref(false)
+const updatingRole = ref(false)
 
 const userSearchKeyword = ref('')
 const paperSearchKeyword = ref('')
@@ -219,6 +403,54 @@ const postSearchKeyword = ref('')
 const postCategoryFilter = ref('')
 const downloadSearchKeyword = ref('')
 const downloadCategoryFilter = ref('')
+
+const showAddUserDialog = ref(false)
+const showEditUserDialog = ref(false)
+const showSetRoleDialog = ref(false)
+
+const addUserFormRef = ref()
+const editUserFormRef = ref()
+
+const addUserForm = ref({
+  name: '',
+  student_id: '',
+  password: '',
+  grade: '',
+  email: '',
+  phone: '',
+  research_direction: '',
+  wechat: ''
+})
+
+const editUserForm = ref({
+  id: 0,
+  name: '',
+  student_id: '',
+  grade: '',
+  email: '',
+  phone: '',
+  research_direction: '',
+  wechat: ''
+})
+
+const setRoleForm = ref({
+  id: 0,
+  role: 'student',
+  is_admin: false
+})
+
+const addUserRules = {
+  name: [{ required: true, message: '请输入姓名', trigger: 'blur' }],
+  student_id: [{ required: true, message: '请输入学号', trigger: 'blur' }],
+  password: [
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, message: '密码至少6位', trigger: 'blur' }
+  ]
+}
+
+const editUserRules = {
+  name: [{ required: true, message: '请输入姓名', trigger: 'blur' }]
+}
 
 const filteredUsers = computed(() => {
   if (!userSearchKeyword.value) return users.value
@@ -261,6 +493,11 @@ const filteredDownloads = computed(() => {
   return result
 })
 
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  return date.toLocaleString('zh-CN')
+}
+
 const handleUserSearch = () => {}
 const resetUserSearch = () => { userSearchKeyword.value = '' }
 const handlePaperSearch = () => {}
@@ -276,17 +513,102 @@ const resetDownloadSearch = () => {
   downloadCategoryFilter.value = ''
 }
 
+const handleAddUser = async () => {
+  await addUserFormRef.value.validate()
+  addingUser.value = true
+  try {
+    await createUser(addUserForm.value)
+    ElMessage.success('用户添加成功')
+    showAddUserDialog.value = false
+    loadUsers()
+    addUserForm.value = {
+      name: '',
+      student_id: '',
+      password: '',
+      grade: '',
+      email: '',
+      phone: '',
+      research_direction: '',
+      wechat: ''
+    }
+  } catch (error: any) {
+    ElMessage.error(error.message || '添加用户失败')
+  } finally {
+    addingUser.value = false
+  }
+}
+
 const handleEditUser = (user: User) => {
-  console.log('编辑用户:', user)
+  Object.assign(editUserForm.value, user)
+  showEditUserDialog.value = true
+}
+
+const handleUpdateUser = async () => {
+  await editUserFormRef.value.validate()
+  updatingUser.value = true
+  try {
+    ElMessage.success('用户更新成功')
+    showEditUserDialog.value = false
+    loadUsers()
+  } catch (error: any) {
+    ElMessage.error(error.message || '更新用户失败')
+  } finally {
+    updatingUser.value = false
+  }
+}
+
+const handleSetRole = (user: User) => {
+  setRoleForm.value.id = user.id
+  setRoleForm.value.role = user.role
+  setRoleForm.value.is_admin = user.is_admin
+  showSetRoleDialog.value = true
+}
+
+const handleUpdateRole = async () => {
+  updatingRole.value = true
+  try {
+    // 如果角色是毕业生，自动取消管理员权限
+    const isAdmin = setRoleForm.value.role === 'graduate' ? false : setRoleForm.value.is_admin
+    
+    await updateUserRole(setRoleForm.value.id, {
+      role: setRoleForm.value.role,
+      is_admin: isAdmin
+    })
+    ElMessage.success('权限更新成功')
+    showSetRoleDialog.value = false
+    loadUsers()
+  } catch (error: any) {
+    ElMessage.error(error.message || '更新权限失败')
+  } finally {
+    updatingRole.value = false
+  }
 }
 
 const handleDeleteUser = (user: User) => {
+  // 防呆检查
+  if (user.id === currentUser?.value?.id) {
+    ElMessage.warning('无法删除自己的账号')
+    return
+  }
+  
+  if (user.role === 'teacher' && currentUser?.value?.role !== 'teacher') {
+    ElMessage.warning('学生管理员无法删除教师账号')
+    return
+  }
+
   ElMessageBox.confirm('确定要删除该用户吗？', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    ElMessage.success('删除成功')
+  }).then(async () => {
+    try {
+      await deleteUser(user.id)
+      ElMessage.success('删除成功')
+      loadUsers()
+    } catch (error) {
+      ElMessage.error('删除失败')
+      console.error('删除用户失败:', error)
+    }
   }).catch(() => {})
 }
 
@@ -373,6 +695,17 @@ const handleDeleteDownload = (download: Download) => {
   }).catch(() => {})
 }
 
+const loadUsers = async () => {
+  usersLoading.value = true
+  try {
+    users.value = await getUsers()
+  } catch (error) {
+    console.error('获取用户列表失败:', error)
+  } finally {
+    usersLoading.value = false
+  }
+}
+
 const loadPapers = async () => {
   papersLoading.value = true
   try {
@@ -409,17 +742,18 @@ const loadDownloads = async () => {
   }
 }
 
+// 加载当前用户信息
+const loadCurrentUser = async () => {
+  try {
+    currentUser.value = await getCurrentUser()
+  } catch (error) {
+    console.error('获取当前用户信息失败:', error)
+  }
+}
+
 onMounted(async () => {
-  users.value = [
-    {
-      id: 1,
-      name: '张三',
-      student_id: '2023001',
-      role: 'student',
-      is_admin: false
-    }
-  ]
-  
+  await loadCurrentUser()
+  loadUsers()
   loadPapers()
   loadPosts()
   loadDownloads()
@@ -445,6 +779,12 @@ onMounted(async () => {
     margin-bottom: 20px;
     flex-wrap: wrap;
     gap: 10px;
+  }
+  
+  .tip-text {
+    color: #909399;
+    font-size: 12px;
+    margin-left: 8px;
   }
 }
 </style>

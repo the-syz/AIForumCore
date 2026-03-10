@@ -71,6 +71,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { getDownloads, downloadResource } from '@/api/downloads'
+import { searchDownloads } from '@/api/search'
 import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 
@@ -97,13 +98,6 @@ const isAdmin = computed(() => userStore.isAdmin)
 
 const filteredDownloads = computed(() => {
   let result = downloads.value
-  
-  // 搜索筛选
-  if (searchKeyword.value) {
-    result = result.filter(item => 
-      item.title.toLowerCase().includes(searchKeyword.value.toLowerCase())
-    )
-  }
   
   // 分类筛选
   if (selectedCategory.value) {
@@ -158,9 +152,15 @@ const handleRowClick = (row: Download) => {
 const loadDownloads = async () => {
   loading.value = true
   try {
-    const data = await getDownloads()
-    downloads.value = data
-    total.value = data.length
+    if (searchKeyword.value.trim()) {
+      const response = await searchDownloads(searchKeyword.value.trim())
+      downloads.value = response.items || []
+      total.value = response.total || 0
+    } else {
+      const data = await getDownloads()
+      downloads.value = data
+      total.value = data.length
+    }
   } catch (error) {
     ElMessage.error('获取资源列表失败')
     console.error('获取资源列表失败:', error)

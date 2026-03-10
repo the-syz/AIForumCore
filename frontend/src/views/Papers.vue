@@ -15,6 +15,7 @@
             </template>
           </el-input>
         </div>
+        <el-button v-if="isSearching" type="info" @click="handleReset">重置</el-button>
         <el-button type="primary" @click="handleUpload">上传论文</el-button>
       </div>
     </div>
@@ -23,7 +24,7 @@
       <el-table-column prop="id" label="ID" width="80" />
       <el-table-column prop="title" label="标题" />
       <el-table-column prop="authors" label="作者" />
-      <el-table-column prop="category" label="分类" width="120" />
+      <el-table-column prop="category" label="研究领域" width="120" />
       <el-table-column prop="upload_time" label="上传时间" width="180" />
       <el-table-column prop="download_count" label="下载次数" width="100" />
       <el-table-column label="操作" width="150">
@@ -68,6 +69,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getPapers, downloadPaper } from '@/api/papers'
+import { searchPapers } from '@/api/search'
 import { ElMessage } from 'element-plus'
 
 interface Paper {
@@ -87,6 +89,7 @@ const pageSize = ref(10)
 const total = ref(0)
 const loading = ref(false)
 const error = ref(false)
+const isSearching = ref(false)
 
 const handleUpload = () => {
   // 跳转到论文上传页面
@@ -109,7 +112,18 @@ const handleDownload = async (paper: Paper) => {
 }
 
 const handleSearch = () => {
-  // 搜索论文
+  if (!searchKeyword.value.trim()) {
+    handleReset()
+    return
+  }
+  isSearching.value = true
+  currentPage.value = 1
+  fetchPapers()
+}
+
+const handleReset = () => {
+  searchKeyword.value = ''
+  isSearching.value = false
   currentPage.value = 1
   fetchPapers()
 }
@@ -130,14 +144,19 @@ const fetchPapers = async () => {
   
   try {
     console.log('开始获取论文列表...')
-    const response = await getPapers({
-      page: currentPage.value,
-      page_size: pageSize.value,
-      keyword: searchKeyword.value
-    })
-    console.log('获取论文列表成功:', response)
-    papers.value = response.items || []
-    total.value = response.total || 0
+    if (searchKeyword.value.trim()) {
+      const response = await searchPapers(searchKeyword.value.trim())
+      papers.value = response.items || []
+      total.value = response.total || 0
+    } else {
+      const response = await getPapers({
+        page: currentPage.value,
+        page_size: pageSize.value
+      })
+      console.log('获取论文列表成功:', response)
+      papers.value = response.items || []
+      total.value = response.total || 0
+    }
     console.log('论文列表数据:', papers.value)
     console.log('论文总数:', total.value)
   } catch (error) {

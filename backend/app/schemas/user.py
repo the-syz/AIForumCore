@@ -1,6 +1,11 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, validator
 from datetime import datetime
 from typing import Optional
+
+# 允许的学生角色
+STUDENT_ROLES = ["master", "phd", "graduate"]
+# 所有角色
+ALL_ROLES = ["master", "phd", "graduate", "teacher"]
 
 class UserBase(BaseModel):
     """用户基础模型"""
@@ -11,6 +16,15 @@ class UserBase(BaseModel):
     phone: Optional[str] = Field(None, max_length=20, description="电话")
     research_direction: Optional[str] = Field(None, max_length=255, description="研究方向")
     wechat: Optional[str] = Field(None, max_length=50, description="微信")
+    role: Optional[str] = Field("master", description="用户角色: master(硕士), phd(博士), graduate(毕业生), teacher(教师)")
+    
+    @validator('role')
+    def validate_role(cls, v):
+        if v is None:
+            return "master"
+        if v not in ALL_ROLES:
+            raise ValueError(f'无效的角色，必须是以下之一: {", ".join(ALL_ROLES)}')
+        return v
 
 class UserCreate(UserBase):
     """用户创建模型"""

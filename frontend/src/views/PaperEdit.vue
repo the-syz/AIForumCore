@@ -36,14 +36,8 @@
           </el-select>
         </el-form-item>
         
-        <el-form-item label="分类" prop="category">
-          <el-select v-model="form.category" placeholder="请选择分类">
-            <el-option label="计算机视觉" value="computer_vision" />
-            <el-option label="自然语言处理" value="nlp" />
-            <el-option label="机器学习" value="machine_learning" />
-            <el-option label="深度学习" value="deep_learning" />
-            <el-option label="其他" value="other" />
-          </el-select>
+        <el-form-item label="研究领域" prop="category">
+          <el-input v-model="form.category" placeholder="请输入研究领域" />
         </el-form-item>
         
         <el-form-item>
@@ -88,7 +82,7 @@ const rules = {
   abstract: [{ required: true, message: '请输入摘要', trigger: 'blur' }],
   keywords: [{ required: true, message: '请输入关键词', trigger: 'blur' }],
   paper_type: [{ required: true, message: '请选择论文类型', trigger: 'blur' }],
-  category: [{ required: true, message: '请选择分类', trigger: 'blur' }]
+  category: [{ required: true, message: '请输入研究领域', trigger: 'blur' }]
 }
 
 const goBack = () => {

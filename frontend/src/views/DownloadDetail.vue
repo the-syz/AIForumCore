@@ -43,6 +43,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/store/user'
+import { useTabsStore } from '@/store/tabs'
 import { getDownloadById, downloadResource } from '@/api/downloads'
 import { ElMessage } from 'element-plus'
 import { Download, Edit } from '@element-plus/icons-vue'
@@ -50,6 +51,7 @@ import { Download, Edit } from '@element-plus/icons-vue'
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const tabsStore = useTabsStore()
 
 const downloadId = Number(route.params.id)
 const download = ref<any>(null)
@@ -91,8 +93,13 @@ const loadDownloadDetail = async () => {
   try {
     const data = await getDownloadById(downloadId)
     download.value = data
+    
+    // 更新标签标题为资源标题（限制长度）
+    if (data.title) {
+      const truncatedTitle = data.title.length > 20 ? data.title.substring(0, 20) + '...' : data.title
+      tabsStore.updateTabTitle(route.path, truncatedTitle)
+    }
   } catch (error) {
-    ElMessage.error('获取资源详情失败')
     console.error('获取资源详情失败:', error)
   } finally {
     loading.value = false

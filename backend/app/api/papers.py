@@ -83,7 +83,8 @@ async def upload_paper(
             )
         
         # 保存文件
-        file_path = file_service.save_file(file, "paper")
+        file_result = file_service.save_file(file, "paper")
+        file_path = file_result["path"]
         print(f"文件保存成功: {file_path}")
         
         # 解析论文（如果失败，使用默认值）
@@ -127,7 +128,28 @@ async def upload_paper(
         )
         print(f"论文创建成功: {paper.id}")
         
-        return paper
+        # 构建响应数据，确保包含完整的解析信息
+        paper_data = {
+            'id': paper.id,
+            'title': final_title,
+            'authors': final_authors,
+            'abstract': abstract or metadata.get('abstract', ''),
+            'keywords': keywords or metadata.get('keywords', ''),
+            'doi': final_doi,
+            'paper_type': paper_type or metadata.get('paper_type', 'journal'),
+            'category': category,
+            'file_path': file_path,
+            'uploader_id': paper.uploader_id,
+            'uploader_name': current_user.name,
+            'upload_time': paper.upload_time,
+            'download_count': paper.download_count,
+            'favorite_count': paper.favorite_count,
+            'view_count': paper.view_count,
+            'like_count': paper.like_count
+        }
+        
+        print(f"返回给前端的完整数据: {paper_data}")
+        return paper_data
     except HTTPException:
         raise
     except Exception as e:
@@ -180,7 +202,36 @@ async def get_paper(
     paper = await Paper.get_or_none(id=paper_id)
     if not paper:
         raise HTTPException(status_code=404, detail="论文不存在")
-    return paper
+    
+    # 获取上传者信息
+    uploader_name = None
+    if paper.uploader_id:
+        from app.models.user import User
+        uploader = await User.get_or_none(id=paper.uploader_id)
+        if uploader:
+            uploader_name = uploader.name
+    
+    # 构建响应数据
+    paper_data = {
+        'id': paper.id,
+        'title': paper.title,
+        'authors': paper.authors,
+        'abstract': paper.abstract,
+        'keywords': paper.keywords,
+        'doi': paper.doi,
+        'paper_type': paper.paper_type,
+        'category': paper.category,
+        'file_path': paper.file_path,
+        'uploader_id': paper.uploader_id,
+        'uploader_name': uploader_name,
+        'upload_time': paper.upload_time,
+        'download_count': paper.download_count,
+        'favorite_count': paper.favorite_count,
+        'view_count': paper.view_count,
+        'like_count': paper.like_count
+    }
+    
+    return paper_data
 
 @router.put("/{paper_id}", response_model=PaperResponse)
 async def update_paper(
@@ -281,7 +332,8 @@ async def parse_paper(
             )
         
         # 保存临时文件
-        file_path = file_service.save_file(file, "temp")
+        file_result = file_service.save_file(file, "temp")
+        file_path = file_result["path"]
         
         # 解析论文
         metadata = paper_parser.parse(file_path)

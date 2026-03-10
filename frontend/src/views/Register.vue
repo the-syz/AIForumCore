@@ -15,6 +15,13 @@
         <el-form-item label="确认密码" prop="confirmPassword" required>
           <el-input v-model="form.confirmPassword" type="password" placeholder="请确认密码" show-password />
         </el-form-item>
+        <el-form-item label="身份" prop="role" required>
+          <el-select v-model="form.role" placeholder="请选择身份">
+            <el-option label="硕士研究生" value="master" />
+            <el-option label="博士研究生" value="phd" />
+            <el-option label="毕业生" value="graduate" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="年级" prop="grade" required>
           <el-select v-model="form.grade" placeholder="请选择年级">
             <el-option
@@ -65,6 +72,7 @@ const form = reactive({
   student_id: '',
   password: '',
   confirmPassword: '',
+  role: 'master',
   grade: '',
   email: '',
   phone: '',
@@ -93,6 +101,7 @@ const rules = {
       trigger: 'blur'
     }
   ],
+  role: [{ required: true, message: '请选择身份', trigger: 'blur' }],
   grade: [{ required: true, message: '请输入年级', trigger: 'blur' }],
   email: [{ message: '请输入邮箱', trigger: 'blur' }],
   phone: [{ message: '请输入电话', trigger: 'blur' }]

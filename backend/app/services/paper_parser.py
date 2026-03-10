@@ -92,18 +92,25 @@ Paper text:
     
     def parse(self, file_path: str) -> dict:
         """解析论文文件"""
+        print(f"开始解析文件: {file_path}")
+        
         # 提取文本
         text = self.extract_text(file_path)
+        print(f"提取的文本长度: {len(text) if text else 0}")
         
         # 如果文本提取失败，尝试OCR
         if not text:
+            print("文本提取失败，尝试OCR")
             text = self.ocr_with_free_api(file_path)
         
         # 直接使用AI解析
+        print("开始使用AI解析")
         metadata = self.parse_with_ai(text)
+        print(f"AI解析结果: {metadata}")
         
         # 如果AI解析失败，使用规则-based方法作为备用
         if not metadata or not metadata.get('title'):
+            print("AI解析失败，使用规则方法")
             metadata = {
                 'title': self.extract_title(text),
                 'authors': self.extract_authors(text),
@@ -112,6 +119,7 @@ Paper text:
                 'doi': self.extract_doi(text),
                 'paper_type': self.determine_paper_type(text)
             }
+            print(f"规则解析结果: {metadata}")
         
         return metadata
     

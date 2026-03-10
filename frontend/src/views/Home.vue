@@ -11,26 +11,29 @@
       <SearchBox @search="handleSearch" />
     </div>
     
-    <!-- 论文推荐 -->
-    <div class="section">
-      <h3>论文推荐</h3>
-      <PaperList :papers="recommendedPapers" />
-    </div>
-    
-    <!-- 经验贴推荐 -->
-    <div class="section">
-      <h3>经验贴推荐</h3>
-      <PostList :posts="recommendedPosts" />
+    <!-- 推荐内容左右分栏 -->
+    <div class="recommendations">
+      <!-- 论文推荐 -->
+      <div class="recommendation-column">
+        <h3>论文推荐</h3>
+        <PaperList :papers="recommendedPapers" />
+      </div>
+      
+      <!-- 经验贴推荐 -->
+      <div class="recommendation-column">
+        <h3>经验贴推荐</h3>
+        <PostList :posts="recommendedPosts" />
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { getPapers } from '@/api/papers'
 import { getPosts } from '@/api/posts'
-import { searchAll } from '@/api/search'
 import SearchBox from '@/components/SearchBox.vue'
 import PaperList from '@/components/PaperList.vue'
 import PostList from '@/components/PostList.vue'
@@ -54,6 +57,7 @@ interface Post {
   like_count?: number
 }
 
+const router = useRouter()
 const userStore = useUserStore()
 const recommendedPapers = ref<Paper[]>([])
 const recommendedPosts = ref<Post[]>([])
@@ -72,16 +76,9 @@ const currentDate = computed(() => {
   return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${weekdays[date.getDay()]}`
 })
 
-const handleSearch = async (keyword: string) => {
+const handleSearch = (keyword: string) => {
   if (!keyword) return
-  
-  try {
-    const results = await searchAll(keyword)
-    console.log('搜索结果:', results)
-    // 跳转到搜索结果页，这里可以添加路由跳转逻辑
-  } catch (error) {
-    console.error('搜索失败:', error)
-  }
+  router.push({ path: '/search', query: { q: keyword } })
 }
 
 onMounted(async () => {
@@ -124,16 +121,30 @@ onMounted(async () => {
     margin-bottom: 40px;
   }
   
-  .section {
+  .recommendations {
+    display: flex;
+    gap: 40px;
     margin-bottom: 50px;
     
-    h3 {
-      margin-bottom: 20px;
-      color: #333;
-      border-bottom: 1px solid #eaeaea;
-      padding-bottom: 10px;
-      font-size: 18px;
-      font-weight: 600;
+    .recommendation-column {
+      flex: 1;
+      
+      h3 {
+        margin-bottom: 20px;
+        color: #333;
+        border-bottom: 1px solid #eaeaea;
+        padding-bottom: 10px;
+        font-size: 18px;
+        font-weight: 600;
+      }
+      
+      /* 确保内部是单列显示 */
+      .paper-list,
+      .post-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
     }
   }
 }
@@ -151,28 +162,14 @@ onMounted(async () => {
       font-size: 14px;
     }
     
-    .section h3 {
-      font-size: 16px;
+    .recommendations {
+      flex-direction: column;
+      gap: 30px;
+      
+      .recommendation-column h3 {
+        font-size: 16px;
+      }
     }
-  }
-  
-  .paper-list,
-  .post-list {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (min-width: 769px) and (max-width: 1024px) {
-  .paper-list,
-  .post-list {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (min-width: 1025px) {
-  .paper-list,
-  .post-list {
-    grid-template-columns: repeat(3, 1fr);
   }
 }
 </style>

@@ -31,6 +31,7 @@ class PaperResponse(PaperBase):
     id: int
     file_path: str
     uploader_id: int
+    uploader_name: Optional[str] = None
     upload_time: datetime
     download_count: int
     favorite_count: int

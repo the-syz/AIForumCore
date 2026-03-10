@@ -2,11 +2,47 @@
   <div class="posts-container">
     <div class="posts-header">
       <h2>经验贴</h2>
-      <el-button type="primary" @click="handleCreate">发布经验贴</el-button>
+      <div class="posts-actions">
+        <div class="search-box">
+          <el-input
+            v-model="searchKeyword"
+            placeholder="搜索经验贴标题、内容..."
+            suffix-icon="el-icon-search"
+            @keyup.enter="handleSearch"
+          >
+            <template #append>
+              <el-button type="primary" @click="handleSearch">搜索</el-button>
+            </template>
+          </el-input>
+        </div>
+        <el-button v-if="isSearching" type="info" @click="handleReset">重置</el-button>
+        <el-button type="primary" @click="handleCreate">发布经验贴</el-button>
+      </div>
+    </div>
+    
+    <!-- 搜索结果列表 -->
+    <div v-if="isSearching" class="search-results">
+      <div v-if="loading" class="loading-section">
+        <el-skeleton :rows="5" animated />
+      </div>
+      <div v-else-if="posts.length === 0" class="empty-state">
+        <el-empty description="未找到相关经验贴" />
+      </div>
+      <div v-else class="result-list">
+        <el-card v-for="post in posts" :key="post.id" class="result-item" @click="handleView(post)">
+          <div class="result-title">{{ post.title }}</div>
+          <div class="result-meta">
+            <span class="result-category">{{ post.category }}</span>
+            <span class="result-author">{{ post.author_name }}</span>
+            <span class="result-time">{{ formatDate(post.created_at) }}</span>
+            <span class="result-views">浏览: {{ post.view_count }}</span>
+          </div>
+        </el-card>
+      </div>
     </div>
     
     <!-- 分类分栏展示 -->
-    <div class="categories-container">
+    <div v-else class="categories-container">
       <!-- 学习经验 -->
       <div class="category-section" v-if="getPostsByCategory('学习经验').length > 0">
         <div class="category-header">
@@ -141,16 +177,17 @@
     </div>
     
     <!-- 无内容提示 -->
-    <div v-if="posts.length === 0" class="empty-state">
+    <div v-if="!isSearching && posts.length === 0" class="empty-state">
       <el-empty description="暂无经验贴" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getPosts, deletePost } from '@/api/posts'
+import { searchPosts } from '@/api/search'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
 
@@ -169,7 +206,10 @@ interface Post {
 const router = useRouter()
 const userStore = useUserStore()
 const posts = ref<Post[]>([])
+const allPosts = ref<Post[]>([])
+const searchKeyword = ref('')
 const loading = ref(false)
+const isSearching = ref(false)
 
 // 检查是否有权限管理经验贴
 const canManagePost = (post: Post) => {
@@ -190,6 +230,32 @@ const getPostsByCategory = (category: string) => {
     })
 }
 
+// 搜索经验贴
+const handleSearch = async () => {
+  if (!searchKeyword.value.trim()) {
+    handleReset()
+    return
+  }
+  loading.value = true
+  isSearching.value = true
+  try {
+    const response = await searchPosts(searchKeyword.value.trim())
+    posts.value = response.items || []
+  } catch (error) {
+    ElMessage.error('搜索失败，请重试')
+    console.error('搜索失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 重置搜索
+const handleReset = () => {
+  searchKeyword.value = ''
+  isSearching.value = false
+  posts.value = [...allPosts.value]
+}
+
 // 格式化日期
 const formatDate = (dateString: string) => {
   const date = new Date(dateString)
@@ -207,7 +273,8 @@ const fetchPosts = async () => {
   loading.value = true
   try {
     const response = await getPosts('', 0, 100) // 获取所有经验贴
-    posts.value = response
+    allPosts.value = response
+    posts.value = [...allPosts.value]
   } catch (error) {
     ElMessage.error('获取经验贴列表失败')
     console.error('获取经验贴列表失败:', error)
@@ -265,6 +332,16 @@ onMounted(() => {
       margin: 0;
       color: #333;
       font-size: 24px;
+    }
+    
+    .posts-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      
+      .search-box {
+        min-width: 300px;
+      }
     }
   }
   
@@ -354,6 +431,44 @@ onMounted(() => {
   .empty-state {
     text-align: center;
     padding: 60px 0;
+  }
+  
+  .search-results {
+    .result-list {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    
+    .result-item {
+      cursor: pointer;
+      transition: all 0.3s ease;
+      
+      &:hover {
+        transform: translateX(5px);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+      }
+      
+      .result-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+      }
+      
+      .result-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        font-size: 13px;
+        color: #999;
+        
+        .result-category {
+          color: #409eff;
+          font-weight: 500;
+        }
+      }
+    }
   }
 }
 </style>

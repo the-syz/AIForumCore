@@ -70,6 +70,15 @@ async def search_posts(
     page_size: int = Query(20, ge=1, le=100, description="每页数量")
 ):
     """搜索经验贴"""
+    # 确保Tortoise ORM上下文是激活的
+    from tortoise import Tortoise
+    from app.core.database import TORTOISE_ORM
+    
+    # 检查Tortoise是否已经初始化
+    if not Tortoise._inited:
+        await Tortoise.init(config=TORTOISE_ORM)
+        print("Tortoise ORM 初始化成功")
+    
     # 构建查询条件
     query = Q(
         Q(title__icontains=keyword) |
@@ -110,6 +119,15 @@ async def search_downloads(
     page_size: int = Query(20, ge=1, le=100, description="每页数量")
 ):
     """搜索下载中心"""
+    # 确保Tortoise ORM上下文是激活的
+    from tortoise import Tortoise
+    from app.core.database import TORTOISE_ORM
+    
+    # 检查Tortoise是否已经初始化
+    if not Tortoise._inited:
+        await Tortoise.init(config=TORTOISE_ORM)
+        print("Tortoise ORM 初始化成功")
+    
     # 构建查询条件
     query = Q(
         Q(title__icontains=keyword) |
@@ -152,6 +170,15 @@ async def search_all(
     page_size: int = Query(20, ge=1, le=100, description="每页数量")
 ):
     """综合搜索"""
+    # 确保Tortoise ORM上下文是激活的
+    from tortoise import Tortoise
+    from app.core.database import TORTOISE_ORM
+    
+    # 检查Tortoise是否已经初始化
+    if not Tortoise._inited:
+        await Tortoise.init(config=TORTOISE_ORM)
+        print("Tortoise ORM 初始化成功")
+    
     # 分别搜索不同类型的内容
     papers_query = Q(
         Q(title__icontains=keyword) |

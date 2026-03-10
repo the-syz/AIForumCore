@@ -136,14 +136,8 @@
           </el-select>
         </el-form-item>
         
-        <el-form-item label="分类" prop="category">
-          <el-select v-model="paperForm.category" placeholder="请选择分类">
-            <el-option label="计算机视觉" value="computer_vision" />
-            <el-option label="自然语言处理" value="nlp" />
-            <el-option label="机器学习" value="machine_learning" />
-            <el-option label="深度学习" value="deep_learning" />
-            <el-option label="其他" value="other" />
-          </el-select>
+        <el-form-item label="研究领域" prop="category">
+          <el-input v-model="paperForm.category" placeholder="请输入研究领域" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -237,7 +231,7 @@ const paperRules = {
   abstract: [{ required: true, message: '请输入摘要', trigger: 'blur' }],
   keywords: [{ required: true, message: '请输入关键词', trigger: 'blur' }],
   paper_type: [{ required: true, message: '请选择论文类型', trigger: 'blur' }],
-  category: [{ required: true, message: '请选择分类', trigger: 'blur' }]
+  category: [{ required: true, message: '请输入研究领域', trigger: 'blur' }]
 }
 
 // 返回论文列表页
@@ -352,6 +346,8 @@ const processUploadQueue = async () => {
       }
     })
 
+    console.log('后端返回的完整响应:', response)
+
     // 添加到已上传文件列表
     const newFile = {
       id: response.id || uploadedFiles.value.length + 1,
@@ -369,9 +365,10 @@ const processUploadQueue = async () => {
         keywords: response.keywords || '',
         doi: response.doi || '',
         paper_type: response.paper_type || 'journal',
-        category: response.category || 'computer_vision'
+        category: response.category || ''
       }
     }
+    console.log('构建的newFile对象:', newFile)
     uploadedFiles.value.push(newFile)
 
     ElMessage.success(`文件 ${currentFile.name} 上传成功`)

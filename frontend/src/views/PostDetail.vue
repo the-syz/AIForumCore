@@ -5,10 +5,16 @@
         <div class="post-header">
           <h2>{{ post.title }}</h2>
           <div class="post-meta">
-            <span class="author">作者: {{ post.author_name }}</span>
+            <span class="author">作者: 
+              <el-link v-if="post.author_id" type="primary" @click="goToUserProfile(post.author_id)">
+                {{ post.author_name }}
+              </el-link>
+              <span v-else>{{ post.author_name }}</span>
+            </span>
             <span class="category">分类: {{ post.category }}</span>
             <span class="created-at">发布时间: {{ formatDate(post.created_at) }}</span>
             <span class="view-count">浏览: {{ post.view_count }}</span>
+            <span class="like-count">点赞: {{ post.like_count }}</span>
             <span class="comment-count">评论: {{ post.comment_count }}</span>
           </div>
         </div>
@@ -36,6 +42,20 @@
       
       <!-- 操作按钮 -->
       <div class="post-actions">
+        <el-button 
+          :type="isLiked ? 'danger' : 'default'" 
+          @click="handleLike"
+        >
+          <el-icon><Star /></el-icon>
+          {{ isLiked ? '已点赞' : '点赞' }}
+        </el-button>
+        <el-button 
+          :type="isFavorited ? 'success' : 'default'" 
+          @click="handleFavorite"
+        >
+          <el-icon><Collection /></el-icon>
+          {{ isFavorited ? '已收藏' : '收藏' }}
+        </el-button>
         <el-button v-if="canManagePost()" type="primary" @click="handleEdit">编辑</el-button>
         <el-button v-if="canManagePost()" type="danger" @click="handleDelete">删除</el-button>
         <el-button @click="router.push('/posts')">返回列表</el-button>
@@ -102,10 +122,11 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { getPostById, deletePost } from '@/api/posts'
-import { getComments, createComment as apiCreateComment } from '@/api/forum'
+import { getComments, createComment as apiCreateComment, toggleLike, toggleFavorite } from '@/api/forum'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
-import { Download, Document } from '@element-plus/icons-vue'
+import { useTabsStore } from '@/store/tabs'
+import { Download, Document, Star, Collection } from '@element-plus/icons-vue'
 
 interface Post {
   id: number
@@ -137,6 +158,11 @@ const router = useRouter()
 const route = useRoute()
 const postId = Number(route.params.id)
 const userStore = useUserStore()
+const tabsStore = useTabsStore()
+
+const goToUserProfile = (userId: number) => {
+  router.push(`/user/${userId}`)
+}
 
 const post = ref<Post>({
   id: 0,
@@ -160,6 +186,8 @@ const loading = ref(false)
 const submittingComment = ref(false)
 const submittingReply = ref(false)
 const replyingComment = ref<Comment | null>(null)
+const isLiked = ref(false)
+const isFavorited = ref(false)
 
 // 检查是否有权限删除或编辑经验贴
 const canManagePost = () => {
@@ -203,8 +231,13 @@ const fetchPostDetail = async () => {
       created_at: comment.created_at,
       parent_id: comment.parent_id
     }))
+    
+    // 更新标签标题为经验贴标题（限制长度）
+    if (response.title) {
+      const truncatedTitle = response.title.length > 20 ? response.title.substring(0, 20) + '...' : response.title
+      tabsStore.updateTabTitle(route.path, truncatedTitle)
+    }
   } catch (error) {
-    ElMessage.error('获取经验贴详情失败')
     console.error('获取经验贴详情失败:', error)
   } finally {
     loading.value = false
@@ -225,6 +258,42 @@ const handleDelete = async () => {
   } catch (error) {
     ElMessage.error('经验贴删除失败')
     console.error('删除经验贴失败:', error)
+  }
+}
+
+// 点赞
+const handleLike = async () => {
+  if (!userStore.token) {
+    ElMessage.warning('请先登录')
+    return
+  }
+  try {
+    await toggleLike('post', postId)
+    isLiked.value = !isLiked.value
+    if (isLiked.value) {
+      post.value.like_count++
+      ElMessage.success('点赞成功')
+    } else {
+      post.value.like_count--
+      ElMessage.success('取消点赞成功')
+    }
+  } catch (error) {
+    ElMessage.error('操作失败')
+  }
+}
+
+// 收藏
+const handleFavorite = async () => {
+  if (!userStore.token) {
+    ElMessage.warning('请先登录')
+    return
+  }
+  try {
+    await toggleFavorite('post', postId)
+    isFavorited.value = !isFavorited.value
+    ElMessage.success(isFavorited.value ? '收藏成功' : '取消收藏成功')
+  } catch (error) {
+    ElMessage.error('操作失败')
   }
 }
 

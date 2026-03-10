@@ -52,6 +52,62 @@ async def get_current_admin(current_user: User = Depends(get_current_user)) -> U
         )
     return current_user
 
+async def optional_get_current_user(token: str = Depends(oauth2_scheme)) -> User | None:
+    """可选获取当前用户（即使没有token也不会报错）"""
+    try:
+        from tortoise import Tortoise
+        from app.core.database import TORTOISE_ORM
+        
+        if not Tortoise._inited:
+            await Tortoise.init(config=TORTOISE_ORM)
+        
+        payload = decode_access_token(token)
+        if payload is None:
+            return None
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            return None
+        user = await User.get_or_none(id=int(user_id))
+        return user
+    except Exception:
+        return None
+
+# 版本2：完全可选，没有token也能通过
+from typing import Optional
+from fastapi.security import OAuth2PasswordBearer
+from fastapi import Request
+
+class OptionalOAuth2PasswordBearer(OAuth2PasswordBearer):
+    async def __call__(self, request: Request) -> Optional[str]:
+        try:
+            return await super().__call__(request)
+        except Exception:
+            return None
+
+optional_oauth2_scheme = OptionalOAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
+
+async def optional_get_current_user_v2(token: Optional[str] = Depends(optional_oauth2_scheme)) -> User | None:
+    """完全可选的当前用户获取（没有token也可以）"""
+    if not token:
+        return None
+    try:
+        from tortoise import Tortoise
+        from app.core.database import TORTOISE_ORM
+        
+        if not Tortoise._inited:
+            await Tortoise.init(config=TORTOISE_ORM)
+        
+        payload = decode_access_token(token)
+        if payload is None:
+            return None
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            return None
+        user = await User.get_or_none(id=int(user_id))
+        return user
+    except Exception:
+        return None
+
 @router.post("/register")
 async def register(user_data: UserCreate):
     """用户注册"""
@@ -82,6 +138,18 @@ async def register(user_data: UserCreate):
             password = password_bytes[:72].decode('utf-8', errors='ignore')
             print(f"截断后密码长度（字节）: {len(password.encode('utf-8'))}")
         
+        # 确定角色和权限
+        # 注册时只允许学生角色，教师角色只能在后台创建
+        role = user_data.role if user_data.role in ["master", "phd", "graduate"] else "master"
+        
+        # 毕业生自动剥离管理员权限
+        is_admin = False
+        if role == "graduate":
+            is_admin = False
+            print(f"用户角色为毕业生，自动剥离管理员权限")
+        
+        print(f"用户角色: {role}, 管理员权限: {is_admin}")
+        
         # 创建用户
         print(f"尝试创建用户: {user_data.name}, 学号: {user_data.student_id}")
         
@@ -93,7 +161,9 @@ async def register(user_data: UserCreate):
             phone=user_data.phone,
             research_direction=user_data.research_direction,
             wechat=user_data.wechat,
-            password_hash=get_password_hash(password)
+            password_hash=get_password_hash(password),
+            role=role,
+            is_admin=is_admin
         )
         print(f"用户创建成功: {user.id}")
         
