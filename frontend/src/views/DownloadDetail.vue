@@ -29,6 +29,10 @@
             <el-icon><Download /></el-icon>
             下载资源
           </el-button>
+          <el-button type="warning" @click="addToAIChat">
+            <el-icon><ChatDotRound /></el-icon>
+            添加到AI对话
+          </el-button>
           <el-button v-if="isAdmin" type="info" @click="handleEdit">
             <el-icon><Edit /></el-icon>
             编辑资源
@@ -46,12 +50,14 @@ import { useUserStore } from '@/store/user'
 import { useTabsStore } from '@/store/tabs'
 import { getDownloadById, downloadResource } from '@/api/downloads'
 import { ElMessage } from 'element-plus'
-import { Download, Edit } from '@element-plus/icons-vue'
+import { Download, Edit, ChatDotRound } from '@element-plus/icons-vue'
+import { useAIStore } from '@/store/ai'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 const tabsStore = useTabsStore()
+const aiStore = useAIStore()
 
 const downloadId = Number(route.params.id)
 const download = ref<any>(null)
@@ -86,6 +92,16 @@ const handleDownload = async () => {
 const handleEdit = () => {
   if (!download.value) return
   router.push(`/downloads/edit/${download.value.id}`)
+}
+
+const addToAIChat = () => {
+  if (!download.value) return
+  aiStore.addSelectedContent({
+    type: 'download',
+    id: download.value.id,
+    title: download.value.title
+  })
+  ElMessage.success('已添加到AI对话')
 }
 
 const loadDownloadDetail = async () => {

@@ -5,6 +5,7 @@ from app.models.user import User
 from app.models.post import Post
 from app.schemas.post import PostCreate, PostResponse, PostUpdate, PostListResponse, PostPinRequest, PostDraftResponse
 from app.services.files import FileService
+from app.services.knowledge_base import knowledge_base_service
 import json
 
 router = APIRouter(prefix="", tags=["经验贴"])
@@ -58,6 +59,15 @@ async def create_post(
             author=current_user,
             attachments=attachments
         )
+        
+        # 异步添加到知识库（不阻塞主流程）
+        if not is_draft:
+            import asyncio
+            try:
+                asyncio.create_task(knowledge_base_service.add_post(post))
+                print(f"经验贴已添加到知识库队列: {post.id}")
+            except Exception as kb_error:
+                print(f"添加经验贴到知识库失败: {kb_error}")
         
         response_data = {
             "id": post.id,
@@ -213,6 +223,14 @@ async def update_post(
         setattr(post, field, value)
     await post.save()
     
+    # 异步更新知识库
+    import asyncio
+    try:
+        asyncio.create_task(knowledge_base_service.update_post(post))
+        print(f"经验贴已更新到知识库队列: {post.id}")
+    except Exception as kb_error:
+        print(f"更新经验贴到知识库失败: {kb_error}")
+    
     # 构建响应
     response_data = {
         "id": post.id,
@@ -246,6 +264,14 @@ async def delete_post(
     # 检查权限：只有作者或管理员可以删除
     if post.author.id != current_user.id and not current_user.is_admin:
         raise HTTPException(status_code=403, detail="权限不足")
+    
+    # 异步从知识库删除
+    import asyncio
+    try:
+        asyncio.create_task(knowledge_base_service.delete_post(post.id))
+        print(f"经验贴已从知识库删除队列: {post.id}")
+    except Exception as kb_error:
+        print(f"从知识库删除经验贴失败: {kb_error}")
     
     # 删除经验贴
     await post.delete()

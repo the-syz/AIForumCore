@@ -1,5 +1,5 @@
 <template>
-  <div class="main-layout">
+  <div class="main-layout" :class="{ 'ai-open': aiStore.isOpen }">
     <!-- 导航栏 -->
     <NavBar />
 
@@ -15,6 +15,9 @@
 
     <!-- 页脚 -->
     <Footer />
+    
+    <!-- AI聊天面板 -->
+    <AIChat />
   </div>
 </template>
 
@@ -24,10 +27,13 @@ import { useRoute } from 'vue-router'
 import NavBar from '@/components/NavBar.vue'
 import TabBar from '@/components/TabBar.vue'
 import Footer from '@/components/Footer.vue'
+import AIChat from '@/components/AIChat.vue'
 import { useTabsStore } from '@/store/tabs'
+import { useAIStore } from '@/store/ai'
 
 const route = useRoute()
 const tabsStore = useTabsStore()
+const aiStore = useAIStore()
 
 const getTabInfo = (path: string) => {
   // 主页标签处理
@@ -107,24 +113,51 @@ watch(
 </script>
 
 <style scoped lang="scss">
-.main-content {
-  min-height: 600px;
-  padding: 20px 0;
+.main-layout {
+  transition: padding-right 0.3s ease;
   
-  .container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
+  .main-content {
+    min-height: 600px;
+    padding: 20px 0;
+    transition: margin-right 0.3s ease;
+    
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+      transition: max-width 0.3s ease;
+    }
+  }
+  
+  &.ai-open {
+    .main-content {
+      margin-right: 400px;
+      
+      .container {
+        max-width: calc(1200px - 400px);
+      }
+    }
   }
 }
 
-/* 标签栏样式 - 预留位置 */
-.tabs-section {
-  margin-bottom: 20px;
-  
-  .el-tabs {
-    .el-tabs__header {
-      margin-bottom: 20px;
+@media (max-width: 1200px) {
+  .main-layout.ai-open {
+    .main-content {
+      margin-right: 350px;
+      
+      .container {
+        max-width: calc(100% - 350px);
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .main-layout.ai-open {
+    .main-content {
+      margin-right: 0;
+      opacity: 0.3;
+      pointer-events: none;
     }
   }
 }

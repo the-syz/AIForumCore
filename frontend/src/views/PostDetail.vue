@@ -56,6 +56,10 @@
           <el-icon><Collection /></el-icon>
           {{ isFavorited ? '已收藏' : '收藏' }}
         </el-button>
+        <el-button type="warning" @click="addToAIChat">
+          <el-icon><ChatDotRound /></el-icon>
+          添加到AI对话
+        </el-button>
         <el-button v-if="canManagePost()" type="primary" @click="handleEdit">编辑</el-button>
         <el-button v-if="canManagePost()" type="danger" @click="handleDelete">删除</el-button>
         <el-button @click="router.push('/posts')">返回列表</el-button>
@@ -126,7 +130,8 @@ import { getComments, createComment as apiCreateComment, toggleLike, toggleFavor
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/store/user'
 import { useTabsStore } from '@/store/tabs'
-import { Download, Document, Star, Collection } from '@element-plus/icons-vue'
+import { Download, Document, Star, Collection, ChatDotRound } from '@element-plus/icons-vue'
+import { useAIStore } from '@/store/ai'
 
 interface Post {
   id: number
@@ -159,6 +164,7 @@ const route = useRoute()
 const postId = Number(route.params.id)
 const userStore = useUserStore()
 const tabsStore = useTabsStore()
+const aiStore = useAIStore()
 
 const goToUserProfile = (userId: number) => {
   router.push(`/user/${userId}`)
@@ -295,6 +301,16 @@ const handleFavorite = async () => {
   } catch (error) {
     ElMessage.error('操作失败')
   }
+}
+
+// 添加到AI对话
+const addToAIChat = () => {
+  aiStore.addSelectedContent({
+    type: 'post',
+    id: post.value.id,
+    title: post.value.title
+  })
+  ElMessage.success('已添加到AI对话')
 }
 
 // 提交评论

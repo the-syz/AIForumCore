@@ -45,6 +45,10 @@
             {{ isFavorited ? '已收藏' : '收藏' }}
           </el-button>
           <el-button type="primary" @click="handleDownload">下载论文</el-button>
+          <el-button type="warning" @click="addToAIChat">
+            <el-icon><ChatDotRound /></el-icon>
+            添加到AI对话
+          </el-button>
         </div>
         
 
@@ -63,12 +67,15 @@ import { toggleLike, toggleFavorite } from '@/api/forum'
 import { useUserStore } from '@/store/user'
 import { useTabsStore } from '@/store/tabs'
 import { ElMessage } from 'element-plus'
-import { Star, Collection } from '@element-plus/icons-vue'
+import { Star, Collection, ChatDotRound } from '@element-plus/icons-vue'
+import { useAIStore } from '@/store/ai'
+import { useTabsStore } from '@/store/tabs'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const tabsStore = useTabsStore()
+const aiStore = useAIStore()
 const paper = ref<any>(null)
 const isLiked = ref(false)
 const isFavorited = ref(false)
@@ -149,6 +156,19 @@ const handleFavorite = async () => {
   } catch (error) {
     ElMessage.error('操作失败')
   }
+}
+
+const addToAIChat = () => {
+  if (!paper.value) return
+  
+  // 添加当前论文到AI对话
+  aiStore.addSelectedContent({
+    type: 'paper',
+    id: paper.value.id,
+    title: paper.value.title
+  })
+  
+  ElMessage.success('已添加到AI对话')
 }
 
 const fetchPaperDetail = async () => {

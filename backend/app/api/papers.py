@@ -6,6 +6,7 @@ from app.models.paper import Paper
 from app.schemas.paper import PaperCreate, PaperResponse, PaperUpdate, PaperListResponse, PaperSearchResponse
 from app.services.files import FileService
 from app.services.paper_parser import PaperParser
+from app.services.knowledge_base import knowledge_base_service
 import os
 import difflib
 
@@ -127,6 +128,14 @@ async def upload_paper(
             uploader_id=current_user.id
         )
         print(f"论文创建成功: {paper.id}")
+        
+        # 异步添加到知识库（不阻塞主流程）
+        import asyncio
+        try:
+            asyncio.create_task(knowledge_base_service.add_paper(paper))
+            print(f"论文已添加到知识库队列: {paper.id}")
+        except Exception as kb_error:
+            print(f"添加论文到知识库失败: {kb_error}")
         
         # 构建响应数据，确保包含完整的解析信息
         paper_data = {
@@ -253,6 +262,14 @@ async def update_paper(
         setattr(paper, field, value)
     await paper.save()
     
+    # 异步更新知识库
+    import asyncio
+    try:
+        asyncio.create_task(knowledge_base_service.update_paper(paper))
+        print(f"论文已更新到知识库队列: {paper.id}")
+    except Exception as kb_error:
+        print(f"更新论文到知识库失败: {kb_error}")
+    
     return paper
 
 @router.delete("/{paper_id}")
@@ -271,6 +288,14 @@ async def delete_paper(
     
     # 删除文件
     file_service.delete_file(paper.file_path)
+    
+    # 异步从知识库删除
+    import asyncio
+    try:
+        asyncio.create_task(knowledge_base_service.delete_paper(paper.id))
+        print(f"论文已从知识库删除队列: {paper.id}")
+    except Exception as kb_error:
+        print(f"从知识库删除论文失败: {kb_error}")
     
     # 删除论文记录
     await paper.delete()

@@ -7,6 +7,7 @@ from app.models.user import User
 from app.models.download import Download
 from app.schemas.download import DownloadCreate, DownloadUpdate, DownloadResponse
 from app.services.files import FileService
+from app.services.knowledge_base import knowledge_base_service
 from tortoise import Tortoise
 
 router = APIRouter(tags=["下载中心"])
@@ -48,6 +49,14 @@ async def create_download(
             file_name=file_name,
             uploader=current_user
         )
+        
+        # 异步添加到知识库（不阻塞主流程）
+        import asyncio
+        try:
+            asyncio.create_task(knowledge_base_service.add_download(download))
+            print(f"下载资源已添加到知识库队列: {download.id}")
+        except Exception as kb_error:
+            print(f"添加下载资源到知识库失败: {kb_error}")
         
         return download
     except HTTPException:
@@ -138,6 +147,15 @@ async def update_download(
             setattr(download, field, value)
         
         await download.save()
+        
+        # 异步更新知识库
+        import asyncio
+        try:
+            asyncio.create_task(knowledge_base_service.update_download(download))
+            print(f"下载资源已更新到知识库队列: {download.id}")
+        except Exception as kb_error:
+            print(f"更新下载资源到知识库失败: {kb_error}")
+        
         return download
     except HTTPException:
         raise
@@ -171,6 +189,14 @@ async def delete_download(
                 os.remove(download.file_path)
             except Exception as e:
                 print(f"删除文件失败: {e}")
+        
+        # 异步从知识库删除
+        import asyncio
+        try:
+            asyncio.create_task(knowledge_base_service.delete_download(download.id))
+            print(f"下载资源已从知识库删除队列: {download.id}")
+        except Exception as kb_error:
+            print(f"从知识库删除下载资源失败: {kb_error}")
         
         # 删除记录
         await download.delete()

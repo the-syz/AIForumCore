@@ -54,6 +54,14 @@
         <template v-else>
           <el-button @click="$router.push('/login')">登录</el-button>
         </template>
+        <el-button 
+          :type="aiStore.isOpen ? 'primary' : 'default'" 
+          @click="aiStore.toggle"
+          class="ai-btn"
+        >
+          <el-icon><ChatLineRound /></el-icon>
+          <span class="ai-text">AI助手</span>
+        </el-button>
       </div>
     </div>
   </nav>
@@ -63,12 +71,14 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
-import { HomeFilled, Document, ChatDotRound, Download, User, Setting, CaretBottom } from '@element-plus/icons-vue'
+import { useAIStore } from '@/store/ai'
+import { HomeFilled, Document, ChatDotRound, Download, User, Setting, CaretBottom, ChatLineRound } from '@element-plus/icons-vue'
 import { logout } from '@/api/auth'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const aiStore = useAIStore()
 
 const activeIndex = computed(() => route.path)
 const isAdmin = computed(() => userStore.isAdmin)
@@ -86,6 +96,9 @@ const handleLogout = async () => {
   background-color: #fff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   padding: 10px 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
   
   .container {
     display: flex;
@@ -117,10 +130,24 @@ const handleLogout = async () => {
   .navbar-user {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
+    
+    .ai-btn {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      
+      .ai-text {
+        @media (max-width: 768px) {
+          display: none;
+        }
+      }
+    }
     
     .user-name {
-      margin-right: 10px;
+      margin-right: 4px;
+      color: #333;
+      font-size: 14px;
     }
   }
 }
