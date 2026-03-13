@@ -73,7 +73,12 @@ services:
       - DATABASE_URL=mysql://${MYSQL_USER:-aiforum}:${MYSQL_PASSWORD}@mysql:3306/aiforum
       - REDIS_URL=redis://redis:6379
       - SECRET_KEY=${SECRET_KEY}
-      - ZHIPU_API_KEY=${ZHIPU_API_KEY}
+      - ZHIPU_API_KEY_1=${ZHIPU_API_KEY_1}
+      - ZHIPU_API_KEY_2=${ZHIPU_API_KEY_2}
+      - ZHIPU_API_KEY_3=${ZHIPU_API_KEY_3}
+      - ZHIPU_API_KEY_4=${ZHIPU_API_KEY_4}
+      - ZHIPU_API_KEY_5=${ZHIPU_API_KEY_5}
+      - OCR_API_KEY=${OCR_API_KEY}
       - DEBUG=${DEBUG:-false}
     volumes:
       - uploads-data:/app/uploads
