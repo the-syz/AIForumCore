@@ -9,6 +9,7 @@ dist/
 
 # Environment
 .env
+.env.prod
 
 # Uploads
 uploads/
@@ -29,3 +30,4 @@ docker-compose.override.yml
 *.temp
 *.swp
 *.swo
+
