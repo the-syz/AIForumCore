@@ -24,5 +24,8 @@ uploads/
 .docker/
 docker-compose.override.yml
 
-# Temporary scripts
-script/
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
