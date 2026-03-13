@@ -69,7 +69,6 @@ import { useTabsStore } from '@/store/tabs'
 import { ElMessage } from 'element-plus'
 import { Star, Collection, ChatDotRound } from '@element-plus/icons-vue'
 import { useAIStore } from '@/store/ai'
-import { useTabsStore } from '@/store/tabs'
 
 const route = useRoute()
 const router = useRouter()
@@ -161,7 +160,6 @@ const handleFavorite = async () => {
 const addToAIChat = () => {
   if (!paper.value) return
   
-  // 添加当前论文到AI对话
   aiStore.addSelectedContent({
     type: 'paper',
     id: paper.value.id,
@@ -177,7 +175,6 @@ const fetchPaperDetail = async () => {
     paper.value = data
     likeCount.value = data.like_count || 0
     
-    // 更新标签标题为论文标题（限制长度）
     if (data.title) {
       const truncatedTitle = data.title.length > 20 ? data.title.substring(0, 20) + '...' : data.title
       tabsStore.updateTabTitle(route.path, truncatedTitle)
