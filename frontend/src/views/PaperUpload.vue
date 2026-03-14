@@ -336,9 +336,6 @@ const processUploadQueue = async () => {
 
     // 使用axios上传文件
     const response = await http.post('/papers/', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      },
       onUploadProgress: (progressEvent) => {
         const percentage = Math.round((progressEvent.loaded / (progressEvent.total || 1)) * 100)
         uploadProgress.value = percentage

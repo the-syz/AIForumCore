@@ -50,19 +50,7 @@ export const uploadDownload = async (formData: FormData): Promise<Download> => {
     mockData.downloads.push(newDownload)
     return Promise.resolve(newDownload)
   }
-  const token = localStorage.getItem('token')
-  const response = await fetch('/api/downloads/', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`
-    },
-    body: formData
-  })
-  if (!response.ok) {
-    const error = await response.json()
-    throw new Error(error.detail || '上传失败')
-  }
-  return response.json()
+  return http.post('/downloads/', formData)
 }
 
 // 更新下载资源

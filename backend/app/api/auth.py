@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import APIRouter, HTTPException, status, Depends, Form
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from app.core.security import verify_password, get_password_hash, create_access_token, decode_access_token
@@ -19,13 +20,8 @@ async def get_current_user(token: str = Depends(oauth2_scheme)) -> User:
     
     try:
         # 确保Tortoise ORM上下文是激活的
-        from tortoise import Tortoise
-        from app.core.database import TORTOISE_ORM
-        
-        # 检查Tortoise是否已经初始化
-        if not Tortoise._inited:
-            await Tortoise.init(config=TORTOISE_ORM)
-            print("Tortoise ORM 初始化成功")
+        from app.core.database import ensure_db_initialized
+        await ensure_db_initialized()
         
         payload = decode_access_token(token)
         if payload is None:
@@ -52,14 +48,11 @@ async def get_current_admin(current_user: User = Depends(get_current_user)) -> U
         )
     return current_user
 
-async def optional_get_current_user(token: str = Depends(oauth2_scheme)) -> User | None:
+async def optional_get_current_user(token: str = Depends(oauth2_scheme)) -> Optional[User]:
     """可选获取当前用户（即使没有token也不会报错）"""
     try:
-        from tortoise import Tortoise
-        from app.core.database import TORTOISE_ORM
-        
-        if not Tortoise._inited:
-            await Tortoise.init(config=TORTOISE_ORM)
+        from app.core.database import ensure_db_initialized
+        await ensure_db_initialized()
         
         payload = decode_access_token(token)
         if payload is None:
@@ -86,16 +79,13 @@ class OptionalOAuth2PasswordBearer(OAuth2PasswordBearer):
 
 optional_oauth2_scheme = OptionalOAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
 
-async def optional_get_current_user_v2(token: Optional[str] = Depends(optional_oauth2_scheme)) -> User | None:
+async def optional_get_current_user_v2(token: Optional[str] = Depends(optional_oauth2_scheme)) -> Optional[User]:
     """完全可选的当前用户获取（没有token也可以）"""
     if not token:
         return None
     try:
-        from tortoise import Tortoise
-        from app.core.database import TORTOISE_ORM
-        
-        if not Tortoise._inited:
-            await Tortoise.init(config=TORTOISE_ORM)
+        from app.core.database import ensure_db_initialized
+        await ensure_db_initialized()
         
         payload = decode_access_token(token)
         if payload is None:
@@ -115,13 +105,8 @@ async def register(user_data: UserCreate):
         print(f"收到注册请求: {user_data}")
         
         # 确保Tortoise ORM上下文是激活的
-        from tortoise import Tortoise
-        from app.core.database import TORTOISE_ORM
-        
-        # 检查Tortoise是否已经初始化
-        if not Tortoise._inited:
-            await Tortoise.init(config=TORTOISE_ORM)
-            print("Tortoise ORM 初始化成功")
+        from app.core.database import ensure_db_initialized
+        await ensure_db_initialized()
         
         # 检查学号是否已存在
         existing_user = await User.filter(student_id=user_data.student_id).first()
@@ -244,13 +229,8 @@ async def login(username: str = Form(...), password: str = Form(...), autoLogin:
         print(f"收到登录请求: {username}, autoLogin: {autoLogin}")
         
         # 确保Tortoise ORM上下文是激活的
-        from tortoise import Tortoise
-        from app.core.database import TORTOISE_ORM
-        
-        # 检查Tortoise是否已经初始化
-        if not Tortoise._inited:
-            await Tortoise.init(config=TORTOISE_ORM)
-            print("Tortoise ORM 初始化成功")
+        from app.core.database import ensure_db_initialized
+        await ensure_db_initialized()
         
         # 查找用户（支持学号/姓名登录）
         user = await User.filter(

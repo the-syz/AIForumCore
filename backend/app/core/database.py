@@ -50,5 +50,30 @@ async def close_db():
     await Tortoise.close_connections()
     print("数据库连接已关闭")
 
+async def ensure_db_initialized():
+    """确保数据库连接池是激活的，如果不是则重新初始化"""
+    if not Tortoise._inited:
+        await init_db()
+        return
+    
+    # 尝试执行一个简单的查询来验证连接池是否可用
+    try:
+        from tortoise.backends.mysql.client import MySQLClient
+        # 直接获取默认连接
+        if hasattr(Tortoise, '_connections') and 'default' in Tortoise._connections:
+            conn = Tortoise._connections['default']
+            # 尝试执行简单查询
+            await conn.execute_query("SELECT 1")
+    except Exception as e:
+        print(f"检测到数据库连接池问题，正在重新初始化: {e}")
+        try:
+            await Tortoise.close_connections()
+        except:
+            pass
+        # 重置Tortoise状态
+        Tortoise._inited = False
+        # 重新初始化
+        await init_db()
+
 if __name__ == "__main__":
     run_async(init_db())

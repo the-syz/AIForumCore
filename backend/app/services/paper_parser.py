@@ -4,30 +4,20 @@ import PyPDF2
 from docx import Document
 import requests
 from zhipuai import ZhipuAI
+from app.services.api_key_manager import api_key_rotator
 
 class PaperParser:
     def __init__(self):
         """初始化解析器"""
-        # 智谱AI API密钥
-        self.api_keys = [
-            "daf178b845444c70b1214c68775c4d9f.6B7xHUSdkTAlRfnf",
-            "3d7497f2805241e8a154fdb620bfdae6.Bf1tzylDkueYa6cw"
-        ]
         self.current_api_key_index = 0
     
     def get_client(self):
         """获取智谱AI客户端"""
         try:
-            api_key = self.api_keys[self.current_api_key_index]
+            api_key = api_key_rotator.get_next_key()
             return ZhipuAI(api_key=api_key)
         except Exception as e:
-            # 切换到下一个API密钥
-            self.current_api_key_index = (self.current_api_key_index + 1) % len(self.api_keys)
-            try:
-                api_key = self.api_keys[self.current_api_key_index]
-                return ZhipuAI(api_key=api_key)
-            except:
-                return None
+            return None
     
     def parse_with_ai(self, text: str) -> dict:
         """使用AI解析论文信息"""

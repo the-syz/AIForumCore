@@ -9,12 +9,14 @@ passlib[bcrypt]
 python-multipart
 pydantic
 pydantic-settings
+email-validator
 python-dotenv
 pypdf2
 pdfplumber
 python-docx
 requests
 zhipuai
+sniffio
 faiss-cpu
 pytest
 pytest-asyncio

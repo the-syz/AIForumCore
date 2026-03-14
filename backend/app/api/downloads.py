@@ -24,20 +24,16 @@ async def create_download(
     """上传下载资源（仅管理员）"""
     try:
         # 确保Tortoise ORM上下文是激活的
-        from tortoise import Tortoise
-        from app.core.database import TORTOISE_ORM
-        
-        # 检查Tortoise是否已经初始化
-        if not Tortoise._inited:
-            await Tortoise.init(config=TORTOISE_ORM)
-            print("Tortoise ORM 初始化成功")
+        from app.core.database import ensure_db_initialized
+        await ensure_db_initialized()
         
         # 验证文件
         if not file_service.validate_file(file, "attachment"):
             raise HTTPException(status_code=400, detail="文件验证失败：文件类型或大小不符合要求")
         
         # 保存文件
-        file_path = file_service.save_file(file, "attachment")
+        file_result = file_service.save_file(file, "attachment")
+        file_path = file_result["path"]
         file_name = file.filename or "unknown"
         
         # 创建下载资源记录
@@ -75,12 +71,9 @@ async def list_downloads(
 ):
     """获取下载资源列表"""
     try:
-        # 尝试重新初始化数据库
-        try:
-            from app.core.database import TORTOISE_ORM
-            await Tortoise.init(config=TORTOISE_ORM)
-        except Exception:
-            pass
+        # 确保Tortoise ORM上下文是激活的
+        from app.core.database import ensure_db_initialized
+        await ensure_db_initialized()
         
         query = Download.all()
         
@@ -103,12 +96,9 @@ async def get_download(
 ):
     """获取下载资源详情"""
     try:
-        # 尝试重新初始化数据库
-        try:
-            from app.core.database import TORTOISE_ORM
-            await Tortoise.init(config=TORTOISE_ORM)
-        except Exception:
-            pass
+        # 确保Tortoise ORM上下文是激活的
+        from app.core.database import ensure_db_initialized
+        await ensure_db_initialized()
         
         download = await Download.get_or_none(id=download_id)
         if not download:
@@ -131,12 +121,9 @@ async def update_download(
 ):
     """更新下载资源（仅管理员）"""
     try:
-        # 尝试重新初始化数据库
-        try:
-            from app.core.database import TORTOISE_ORM
-            await Tortoise.init(config=TORTOISE_ORM)
-        except Exception:
-            pass
+        # 确保Tortoise ORM上下文是激活的
+        from app.core.database import ensure_db_initialized
+        await ensure_db_initialized()
         
         download = await Download.get_or_none(id=download_id)
         if not download:
@@ -172,12 +159,9 @@ async def delete_download(
 ):
     """删除下载资源（仅管理员）"""
     try:
-        # 尝试重新初始化数据库
-        try:
-            from app.core.database import TORTOISE_ORM
-            await Tortoise.init(config=TORTOISE_ORM)
-        except Exception:
-            pass
+        # 确保Tortoise ORM上下文是激活的
+        from app.core.database import ensure_db_initialized
+        await ensure_db_initialized()
         
         download = await Download.get_or_none(id=download_id)
         if not download:
@@ -216,12 +200,9 @@ async def download_file(
 ):
     """下载资源文件"""
     try:
-        # 尝试重新初始化数据库
-        try:
-            from app.core.database import TORTOISE_ORM
-            await Tortoise.init(config=TORTOISE_ORM)
-        except Exception:
-            pass
+        # 确保Tortoise ORM上下文是激活的
+        from app.core.database import ensure_db_initialized
+        await ensure_db_initialized()
         
         download = await Download.get_or_none(id=download_id)
         if not download:

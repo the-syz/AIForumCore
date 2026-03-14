@@ -16,8 +16,6 @@ services:
       - --table-open-cache=64
       - --thread-cache-size=8
       - --key-buffer-size=8M
-      - --query-cache-size=0
-      - --query-cache-type=0
       - --performance-schema=OFF
     volumes:
       - mysql-data:/var/lib/mysql

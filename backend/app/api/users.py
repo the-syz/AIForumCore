@@ -50,6 +50,8 @@ async def list_users(
     current_user: User = Depends(get_current_admin)
 ):
     """获取用户列表（管理员）"""
+    from app.core.database import ensure_db_initialized
+    await ensure_db_initialized()
     users = await User.all().offset(skip).limit(limit)
     return users
 
@@ -59,6 +61,8 @@ async def get_user_public(
     current_user: User = Depends(optional_get_current_user_v2)
 ):
     """获取用户公开信息（无需管理员权限）"""
+    from app.core.database import ensure_db_initialized
+    await ensure_db_initialized()
     user = await User.get_or_none(id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
@@ -70,6 +74,8 @@ async def get_user(
     current_user: User = Depends(get_current_admin)
 ):
     """获取用户详情（管理员）"""
+    from app.core.database import ensure_db_initialized
+    await ensure_db_initialized()
     user = await User.get_or_none(id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
@@ -83,6 +89,8 @@ async def get_user_papers(
     current_user: User = Depends(optional_get_current_user_v2)
 ):
     """获取用户发布的论文列表"""
+    from app.core.database import ensure_db_initialized
+    await ensure_db_initialized()
     user = await User.get_or_none(id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
@@ -98,6 +106,8 @@ async def get_user_posts(
     current_user: User = Depends(optional_get_current_user_v2)
 ):
     """获取用户发布的经验贴列表"""
+    from app.core.database import ensure_db_initialized
+    await ensure_db_initialized()
     user = await User.get_or_none(id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")

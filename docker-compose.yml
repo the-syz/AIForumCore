@@ -6,12 +6,12 @@ services:
     image: mysql:8.0
     container_name: aiforum-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: aiforum
       MYSQL_USER: aiforum
       MYSQL_PASSWORD: password
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     restart: unless-stopped
@@ -21,7 +21,7 @@ services:
     image: redis:6
     container_name: aiforum-redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
     volumes:
       - redis-data:/data
     restart: unless-stopped

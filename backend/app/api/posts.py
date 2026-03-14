@@ -6,6 +6,7 @@ from app.models.post import Post
 from app.schemas.post import PostCreate, PostResponse, PostUpdate, PostListResponse, PostPinRequest, PostDraftResponse
 from app.services.files import FileService
 from app.services.knowledge_base import knowledge_base_service
+from app.core.database import ensure_db_initialized
 import json
 
 router = APIRouter(prefix="", tags=["经验贴"])
@@ -23,12 +24,7 @@ async def create_post(
 ):
     """发布经验贴"""
     try:
-        from tortoise import Tortoise
-        from app.core.database import TORTOISE_ORM
-        
-        if not Tortoise._inited:
-            await Tortoise.init(config=TORTOISE_ORM)
-            print("Tortoise ORM 初始化成功")
+        await ensure_db_initialized()
         
         attachments = []
         
@@ -48,7 +44,7 @@ async def create_post(
         
         for file in files:
             if file_service.validate_file(file):
-                result = file_service.save_file(file, "attachment")
+                result = await file_service.save_file(file, "attachment")
                 attachments.append(result)
         
         post = await Post.create(
@@ -104,13 +100,7 @@ async def list_posts(
 ):
     """获取经验贴列表"""
     try:
-        # 尝试重新初始化数据库
-        try:
-            from tortoise import Tortoise
-            from app.core.database import TORTOISE_ORM
-            await Tortoise.init(config=TORTOISE_ORM)
-        except Exception as e:
-            print(f"Tortoise ORM 初始化失败: {str(e)}")
+        await ensure_db_initialized()
         
         query = Post.filter(is_draft=False)
         
@@ -156,6 +146,7 @@ async def list_drafts(
     current_user: User = Depends(get_current_user)
 ):
     """获取当前用户的草稿"""
+    await ensure_db_initialized()
     drafts = await Post.filter(
         author=current_user,
         is_draft=True
@@ -169,6 +160,7 @@ async def get_post(
     current_user: User = Depends(get_current_user)
 ):
     """获取经验贴详情"""
+    await ensure_db_initialized()
     # 获取经验贴，包括作者信息
     post = await Post.get_or_none(id=post_id).prefetch_related("author")
     if not post:
@@ -209,6 +201,7 @@ async def update_post(
     current_user: User = Depends(get_current_user)
 ):
     """更新经验贴"""
+    await ensure_db_initialized()
     post = await Post.get_or_none(id=post_id).prefetch_related("author")
     if not post:
         raise HTTPException(status_code=404, detail="经验贴不存在")
@@ -257,6 +250,7 @@ async def delete_post(
     current_user: User = Depends(get_current_user)
 ):
     """删除经验贴"""
+    await ensure_db_initialized()
     post = await Post.get_or_none(id=post_id).prefetch_related("author")
     if not post:
         raise HTTPException(status_code=404, detail="经验贴不存在")
@@ -285,6 +279,7 @@ async def pin_post(
     current_user: User = Depends(get_current_admin)
 ):
     """置顶/取消置顶经验贴（管理员）"""
+    await ensure_db_initialized()
     post = await Post.get_or_none(id=post_id)
     if not post:
         raise HTTPException(status_code=404, detail="经验贴不存在")
