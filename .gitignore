@@ -31,3 +31,7 @@ docker-compose.override.yml
 *.swp
 *.swo
 
+err.log
+
+# 技术总结文档（简历用）
+docs/项目技术细节总结.md

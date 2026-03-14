@@ -19,6 +19,7 @@
           </el-descriptions-item>
           <el-descriptions-item label="邮箱">{{ userInfo.email || '未填写' }}</el-descriptions-item>
           <el-descriptions-item label="电话">{{ userInfo.phone || '未填写' }}</el-descriptions-item>
+          <el-descriptions-item label="微信">{{ userInfo.wechat || '未填写' }}</el-descriptions-item>
           <el-descriptions-item label="研究方向" :span="2">{{ userInfo.research_direction || '未填写' }}</el-descriptions-item>
         </el-descriptions>
       </div>
