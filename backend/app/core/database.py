@@ -6,8 +6,9 @@ from dotenv import load_dotenv
 # 添加backend目录到Python搜索路径
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..')))
 
-# 加载环境变量
-load_dotenv()
+# 仅在非Docker环境下加载.env文件
+if not os.getenv('DOCKER_ENV'):
+    load_dotenv()
 
 # 获取数据库连接信息
 DATABASE_URL = os.getenv('DATABASE_URL', 'mysql://aiforum:password@localhost:3306/aiforum')
