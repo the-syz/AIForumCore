@@ -9,9 +9,12 @@ import os
 from pathlib import Path
 from dotenv import load_dotenv
 
-# 加载环境变量 - 从项目根目录的.env文件
-env_path = Path(__file__).parent.parent / '.env'
-load_dotenv(env_path)
+# 加载环境变量 - 仅在本地开发时加载.env文件
+# 在Docker环境中，环境变量由docker-compose设置
+if not os.getenv('DOCKER_ENV'):
+    env_path = Path(__file__).parent.parent / '.env'
+    if env_path.exists():
+        load_dotenv(env_path)
 
 # 数据库初始化
 from app.core.database import init_db, close_db

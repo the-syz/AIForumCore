@@ -68,6 +68,7 @@ services:
       redis:
         condition: service_healthy
     environment:
+      - DOCKER_ENV=true
       - DATABASE_URL=mysql://${MYSQL_USER:-aiforum}:${MYSQL_PASSWORD}@mysql:3306/aiforum
       - REDIS_URL=redis://redis:6379
       - SECRET_KEY=${SECRET_KEY}
