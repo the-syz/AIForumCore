@@ -38,6 +38,7 @@ class UserLogin(BaseModel):
 class UserUpdate(BaseModel):
     """用户更新模型"""
     name: Optional[str] = Field(None, min_length=1, max_length=50)
+    student_id: Optional[str] = Field(None, min_length=1, max_length=20)
     grade: Optional[str] = Field(None, max_length=10)
     email: Optional[EmailStr] = None
     phone: Optional[str] = Field(None, max_length=20)

@@ -17,6 +17,7 @@ interface UserInfo {
 
 interface UserUpdate {
   name?: string
+  student_id?: string
   grade?: string
   email?: string
   phone?: string
@@ -115,6 +116,11 @@ export const updateUserRole = async (
   return http.put(`/users/${userId}/role`, null, {
     params: data
   })
+}
+
+// 更新用户信息（管理员）
+export const updateUser = async (userId: number, data: UserUpdate): Promise<UserInfo> => {
+  return http.put(`/users/${userId}`, data)
 }
 
 // 删除用户（管理员）

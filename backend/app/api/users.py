@@ -25,6 +25,12 @@ async def update_me(
     current_user: User = Depends(get_current_user)
 ):
     """更新当前用户信息"""
+    # 检查学号是否已存在
+    if user_data.student_id:
+        existing_user = await User.filter(student_id=user_data.student_id).first()
+        if existing_user and existing_user.id != current_user.id:
+            raise HTTPException(status_code=400, detail="学号已存在")
+    
     for field, value in user_data.model_dump(exclude_unset=True).items():
         setattr(current_user, field, value)
     await current_user.save()
@@ -79,6 +85,28 @@ async def get_user(
     user = await User.get_or_none(id=user_id)
     if not user:
         raise HTTPException(status_code=404, detail="用户不存在")
+    return user
+
+@router.put("/{user_id}", response_model=UserResponse)
+async def update_user(
+    user_id: int,
+    user_data: UserUpdate,
+    current_user: User = Depends(get_current_admin)
+):
+    """更新用户信息（管理员）"""
+    user = await User.get_or_none(id=user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    
+    # 检查学号是否已存在
+    if user_data.student_id:
+        existing_user = await User.filter(student_id=user_data.student_id).first()
+        if existing_user and existing_user.id != user_id:
+            raise HTTPException(status_code=400, detail="学号已存在")
+    
+    for field, value in user_data.model_dump(exclude_unset=True).items():
+        setattr(user, field, value)
+    await user.save()
     return user
 
 @router.get("/{user_id}/papers")

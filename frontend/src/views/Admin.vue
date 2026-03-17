@@ -237,7 +237,7 @@
           <el-input v-model="editUserForm.name" />
         </el-form-item>
         <el-form-item label="学号" prop="student_id">
-          <el-input v-model="editUserForm.student_id" disabled />
+          <el-input v-model="editUserForm.student_id" />
         </el-form-item>
         <el-form-item label="年级" prop="grade">
           <el-input v-model="editUserForm.grade" />
@@ -320,7 +320,7 @@ import { Search } from '@element-plus/icons-vue'
 import { getPapers, deletePaper } from '@/api/papers'
 import { getPosts, deletePost, pinPost } from '@/api/posts'
 import { getDownloads, deleteDownload } from '@/api/downloads'
-import { getUsers, createUser, deleteUser, updateUserRole } from '@/api/users'
+import { getUsers, createUser, deleteUser, updateUserRole, updateUser } from '@/api/users'
 import { useUserStore } from '@/store/user'
 import { getCurrentUser } from '@/api/users'
 
@@ -547,6 +547,7 @@ const handleUpdateUser = async () => {
   await editUserFormRef.value.validate()
   updatingUser.value = true
   try {
+    await updateUser(editUserForm.value.id, editUserForm.value)
     ElMessage.success('用户更新成功')
     showEditUserDialog.value = false
     loadUsers()
