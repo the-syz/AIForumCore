@@ -20,6 +20,8 @@ uploads/
 # IDE
 .vscode/
 .idea/
+.cursor/
+.trae/
 
 # Docker
 .docker/
@@ -32,6 +34,13 @@ docker-compose.override.yml
 *.swo
 
 err.log
+
+# Local/private files
+backup/
+backend/data/
+管理员账户密码
+大模型文档/apikey.txt
+大模型文档/api-key概述.md
 
 # 技术总结文档（简历用）
 docs/项目技术细节总结.md
